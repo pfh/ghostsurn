@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang=en>
+<meta charset=utf-8>
+<style>
+.clicky { border: 1px solid black; }
+</style>
+
+</style>
+<title>Sampler</title>
+
+<p>
+    <input type=color id=pal1 value=white onchange="redraw()">
+    <input type=color id=pal2 value=black onchange="redraw()">
+    Width <input type=number id=width value=20 min=1 onchange="recompute()">
+    Height <input type=number id=height value=20 min=1 onchange="recompute()">
+    Effort <input type=number id=effort value=10 min=1 onchange="recompute()">
+    Scale <input type=number id=scale value=10 min=1 max=100 onchange="redraw()">
+    <button id=again onclick="recompute()">Again</button>
+</p>
+
+<p>
+    <canvas id=pattern width=60 height=60 class=clicky></canvas>
+    <canvas id=mask width=60 height=60 class=clicky></canvas>
+</p>
+
+<p>
+  <canvas id=plot ></canvas>
+</p>
+
+<p>&nbsp;</p>
+
+<script src=sampler.js></script>
+<script src=interface.js></script>
+
+<script>
+"use strict";
+
+let canvas = document.getElementById("plot");
+let ctx = canvas.getContext("2d");
+
+let worker = null;
+let ready = false;
+
+let result = null;
+let param = { };
+
+let pattern = new Click_map(
+    "pattern", new Picture(10,10,"_"), "_01", {"_":"#888888", "0":"white","1":"black"});
+let mask = new Click_map(
+    "mask", new Picture(5,5, "0"), "01", {"0":"#888888","1":"black"});
+
+function job(command, callback) {
+    if (!ready) {
+        if (worker !== null) worker.terminate();
+        worker = new Worker("worker.js?1");
+        worker.onmessage = function(msg) {
+            callback(msg.data);
+            ready = true;
+        }
+    }
+    ready = false;
+    worker.postMessage(command);
+}
+
+function load_param() {
+    param.width = document.getElementById("width").value;
+    param.height = document.getElementById("height").value;
+    param.effort = document.getElementById("effort").value;
+    param.scale = document.getElementById("scale").value;
+    param.palette = {
+        a: document.getElementById("pal1").value,
+        b: document.getElementById("pal2").value,
+    };
+}
+
+function redraw() {
+    load_param();
+
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+
+    if (result === null) return;
+
+    if (result.words.length == 0) return;
+
+    let scale = param.scale;
+    let word = result.words[0];
+
+    canvas.width = result.width*scale;
+    canvas.height = result.height*scale;
+
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+
+    for(let y of range(result.height)) {
+        for(let x of range(result.width)) {
+            ctx.fillStyle = param.palette[word[y*result.width+x]];
+            ctx.fillRect(x*scale,y*scale,scale,scale);
+        }
+    }
+}
+
+function recompute() {
+    load_param();
+    result = null;
+    redraw();
+
+    let command = `new Validity(${param.width},${param.height}, 2,2, "ab", ["aaaa","aabb","abab","abba","baaa","babb","bbab","bbba"]).sample(${param.effort})`;
+    job(command, (msg)=> {
+        result = msg;
+        redraw();
+    });
+}
+
+pattern.redraw();
+mask.redraw();
+redraw();
+recompute();
+
+</script>
