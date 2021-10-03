@@ -2,31 +2,45 @@
 <html lang=en>
 <meta charset=utf-8>
 <style>
-body { font-family: sans-serif; }
+body { font-family: sans-serif; margin: 1em 1em 1em 1em; }
 .clicky { border: 1px solid black; }
+
+.grid { display: grid; width: 100%; grid-template-columns: max-content max-content; }
+.item { padding: 0em 1em 1em 0em; }
 </style>
 
 </style>
-<title>Sampler</title>
+<title>ghostsurn</title>
+<h1>ghostsurn</h1>
 
-<p>
-    <input type=color id=pal1 value="#ffffff" onchange="redraw()">
-    <input type=color id=pal2 value="#000000" onchange="redraw()">
-    Width <input type=number id=width min=1 onchange="recompute()">
-    Height <input type=number id=height min=1 onchange="recompute()">
-    Effort <input type=number id=effort min=1 onchange="recompute()">
-    Scale <input type=number id=scale min=1 max=100 onchange="redraw()">
-    <button id=again onclick="recompute()">Again</button>
-</p>
+<div style="float: left; margin-right: 2em; margin-bottom: 2em;">
+    <div class=grid>
+      <div class=item>Pattern</div>
+      <div class=item><canvas id=pattern width=60 height=60 class=clicky></canvas></div>
+      <div class=item>Mask</div>
+      <div class=item><canvas id=mask width=60 height=60 class=clicky></canvas></div>
+      <div class=item>Palette</div>
+      <div class=item>
+        <input type=color id=pal0 onchange="redraw()">
+        <input type=color id=pal1 onchange="redraw()">
+        <input type=color id=pal2 onchange="redraw()">
+      </div>
+      <div class=item>Width</div>
+      <div class=item><input type=number id=width min=1 onchange="recompute()"></div>
+      <div class=item>Height</div>
+      <div class=item><input type=number id=height min=1 onchange="recompute()"></div>    
+      <div class=item>Effort</div>
+      <div class=item><input type=number id=effort min=1 onchange="recompute()"></div>
+      <div class=item>Scale</div>
+      <div class=item><input type=number id=scale min=1 max=100 onchange="redraw()"></div>
+      <div class=item></div>
+      <div class=item><button id=again onclick="recompute()">Again</button></div>
+    </div>
+</div>
 
-<p>
-    <canvas id=pattern width=60 height=60 class=clicky></canvas>
-    <canvas id=mask width=60 height=60 class=clicky></canvas>
-</p>
-
-<p>
-  <canvas id=plot ></canvas>
-</p>
+<div style="padding-top: 0.5em">
+  <canvas id=plot></canvas>
+</div>
 
 <p>&nbsp;</p>
 
@@ -46,9 +60,9 @@ let result = null;
 let param = { };
 
 let pattern = new Click_map(
-    "pattern", new Picture(10,10,"_"), "_01", null);
+    "pattern", new Picture(10,10,"_"), "_012", null, null);
 let mask = new Click_map(
-    "mask", new Picture(5,5, "0"), "01", {"0":"#888888","1":"black"});
+    "mask", new Picture(5,5, "0"), "01", {"0":"#888888","1":"black"}, null);
 
 function job(command, callback) {
     if (!ready) {
@@ -68,6 +82,13 @@ function read_url() {
     document.getElementById("width").value = sp_get_int(sp, "width", 20);
     document.getElementById("height").value = sp_get_int(sp, "height", 20);
     document.getElementById("effort").value = sp_get_int(sp, "effort", 100);
+    document.getElementById("scale").value = sp_get_int(sp, "scale", 10);
+    document.getElementById("pal0").value = sp_get_str(sp, "pal0", "#eeffff");
+    document.getElementById("pal1").value = sp_get_str(sp, "pal1", "#0000ff");
+    document.getElementById("pal2").value = sp_get_str(sp, "pal2", "#008800");
+
+    pattern.pic.word = sp_get_fixed_str(sp, "pattern", "_".repeat(pattern.pic.width*pattern.pic.height));
+    mask.pic.word = sp_get_fixed_str(sp, "mask", "0".repeat(mask.pic.width*mask.pic.height));
 }
 
 function update_url() {
@@ -78,6 +99,9 @@ function update_url() {
     sp.set("scale",param.scale);
     sp.set("pattern",pattern.pic.word);
     sp.set("mask",mask.pic.word);
+    sp.set("pal0",param.palette["0"]);
+    sp.set("pal1",param.palette["1"]);
+    sp.set("pal2",param.palette["2"]);
 
     let url = new URL(location);
     url.search = sp;
@@ -90,8 +114,9 @@ function load_param() {
     param.effort = document.getElementById("effort").value;
     param.scale = document.getElementById("scale").value;
     param.palette = {
-        "0": document.getElementById("pal1").value,
-        "1": document.getElementById("pal2").value,
+        "0": document.getElementById("pal0").value,
+        "1": document.getElementById("pal1").value,
+        "2": document.getElementById("pal2").value,
     };
 }
 
@@ -130,18 +155,25 @@ function recompute() {
     result = null;
     redraw();
 
-    let valids = [ ];
-    for(let y of range(pattern.pic.height-1)) {
-        for(let x of range(pattern.pic.width-1)) {
-            let word = pattern.pic.get_part(x,y,2,2).word;
-            if (word.search("_") < 0)
-                valids.push(word);
+    let patpics = [ pattern.pic ];
+    for(let i of range(3))
+        patpics.push( patpics[patpics.length-1].get_rot() );
+
+    let valids = new Set();
+    for(let patpic of patpics) {
+        for(let y of range(patpic.height-1)) {
+            for(let x of range(patpic.width-1)) {
+                let word = patpic.get_part(x,y,2,2).word;
+                if (word.search("_") < 0)
+                    valids.add(word);
+            }
         }
     }
 
     console.log(valids);
 
-    let command = `new Validity(${param.width},${param.height}, 2,2, "01", ${JSON.stringify(valids)}).sample(${param.effort})`;
+    let valids_str = JSON.stringify(Array.from(valids));
+    let command = `new Validity(${param.width},${param.height}, 2,2, "012", ${valids_str}).sample(${param.effort})`;
     job(command, (msg)=> {
         result = msg;
         redraw();
@@ -149,6 +181,8 @@ function recompute() {
 }
 
 
+pattern.onchange = recompute;
+mask.onchange = recompute;
 
 read_url();
 recompute();

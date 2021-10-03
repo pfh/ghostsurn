@@ -60,6 +60,14 @@ class Picture {
             new_word += this.word.slice((y+i)*this.width+x,(y+i)*this.width+x+w);
         return new Picture(w,h,new_word);
     }
+
+    get_rot() {
+        let new_word = "";
+        for(let x=this.width-1;x>=0;x--)
+            for(let y=0;y<this.height;y++)
+                new_word += this.get(x,y);
+        return new Picture(this.height, this.width, new_word);
+    }
 }
 
 class Validity {

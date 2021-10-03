@@ -7,15 +7,29 @@ function sp_get_int(sp, field, default_value) {
     return result;
 }
 
+function sp_get_str(sp, field, default_value) {
+    let result = sp.get(field);
+    if (typeof result !== "string")
+        result = default_value;
+    return result;
+}
+
+function sp_get_fixed_str(sp, field, default_value) {
+    let result = sp.get(field);
+    if (typeof result !== "string" || result.length != default_value.length)
+        result = default_value;
+    return result;
+}
 
 class Click_map {
-    constructor(id, pic, choices, palette) {
+    constructor(id, pic, choices, palette, onchange) {
         this.canvas = document.getElementById(id);
         this.ctx = this.canvas.getContext("2d");
         this.scale = 20;
         this.pic = pic;
         this.choices = choices;
         this.palette = palette;
+        this.onchange = onchange;
 
         this.canvas.onclick = this.click.bind(this);
     }
@@ -38,7 +52,9 @@ class Click_map {
         let y = ((e.clientY-rect.top)/this.scale)>>0;
         let c = this.choices[(this.choices.search(this.pic.get(x,y))+1)%this.choices.length];
         this.pic.set(x,y,c);
-        this.redraw();
+        //this.redraw();
+        if (this.onchange !== null) 
+            this.onchange();
     }
 
     //todo: preview color on hover
