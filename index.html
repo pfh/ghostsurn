@@ -38,8 +38,8 @@ body { font-family: sans-serif; margin: 1em 1em 1em 1em; }
     </div>
 </div>
 
-<div style="padding-top: 0.5em">
-  <canvas id=plot></canvas>
+<div>
+  <canvas id=plot onmousedown="on_plot_mousedown()"></canvas>
 </div>
 
 <p>&nbsp;</p>
@@ -57,17 +57,18 @@ let worker = null;
 let ready = false;
 
 let result = null;
+let which = 0;
 let param = { };
 
 let pattern = new Click_map(
     "pattern", new Picture(10,10,"_"), "_012", null, null);
 let mask = new Click_map(
-    "mask", new Picture(5,5, "0"), "01", {"0":"#888888","1":"black"}, null);
+    "mask", new Picture(5,5, "0"), "01", {"0":"#cccccc","1":"black"}, null);
 
 function job(command, callback) {
     if (!ready) {
         if (worker !== null) worker.terminate();
-        worker = new Worker("worker.js?1");
+        worker = new Worker("worker.js");
         worker.onmessage = function(msg) {
             callback(msg.data);
             ready = true;
@@ -120,11 +121,22 @@ function load_param() {
     };
 }
 
+function on_plot_mousedown() {
+    function ticker() {
+        which = Math.random();
+        redraw();
+        if (document.body.matches(":active"))
+            setTimeout(ticker, 100);
+    }
+
+    setTimeout(ticker);
+}
+
 function redraw() {
     load_param();
     update_url();
 
-    pattern.palette = {"_":"#888888", ...param.palette};
+    pattern.palette = {"_":"#cccccc", ...param.palette};
     pattern.redraw();
     mask.redraw();
 
@@ -135,7 +147,7 @@ function redraw() {
     if (result.words.length == 0) return;
 
     let scale = param.scale;
-    let word = result.words[0];
+    let word = result.words[ Math.floor(result.words.length*which) ];
 
     canvas.width = result.width*scale;
     canvas.height = result.height*scale;
