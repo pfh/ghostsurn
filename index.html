@@ -2,6 +2,7 @@
 <html lang=en>
 <meta charset=utf-8>
 <style>
+body { font-family: sans-serif; }
 .clicky { border: 1px solid black; }
 </style>
 
@@ -9,12 +10,12 @@
 <title>Sampler</title>
 
 <p>
-    <input type=color id=pal1 value=white onchange="redraw()">
-    <input type=color id=pal2 value=black onchange="redraw()">
-    Width <input type=number id=width value=20 min=1 onchange="recompute()">
-    Height <input type=number id=height value=20 min=1 onchange="recompute()">
-    Effort <input type=number id=effort value=10 min=1 onchange="recompute()">
-    Scale <input type=number id=scale value=10 min=1 max=100 onchange="redraw()">
+    <input type=color id=pal1 value="#ffffff" onchange="redraw()">
+    <input type=color id=pal2 value="#000000" onchange="redraw()">
+    Width <input type=number id=width min=1 onchange="recompute()">
+    Height <input type=number id=height min=1 onchange="recompute()">
+    Effort <input type=number id=effort min=1 onchange="recompute()">
+    Scale <input type=number id=scale min=1 max=100 onchange="redraw()">
     <button id=again onclick="recompute()">Again</button>
 </p>
 
@@ -45,7 +46,7 @@ let result = null;
 let param = { };
 
 let pattern = new Click_map(
-    "pattern", new Picture(10,10,"_"), "_01", {"_":"#888888", "0":"white","1":"black"});
+    "pattern", new Picture(10,10,"_"), "_01", null);
 let mask = new Click_map(
     "mask", new Picture(5,5, "0"), "01", {"0":"#888888","1":"black"});
 
@@ -62,19 +63,45 @@ function job(command, callback) {
     worker.postMessage(command);
 }
 
+function read_url() {
+    let sp = new URLSearchParams(location.search);
+    document.getElementById("width").value = sp_get_int(sp, "width", 20);
+    document.getElementById("height").value = sp_get_int(sp, "height", 20);
+    document.getElementById("effort").value = sp_get_int(sp, "effort", 100);
+}
+
+function update_url() {
+    let sp = new URLSearchParams();
+    sp.set("width",param.width);
+    sp.set("height",param.height);
+    sp.set("effort",param.effort);
+    sp.set("scale",param.scale);
+    sp.set("pattern",pattern.pic.word);
+    sp.set("mask",mask.pic.word);
+
+    let url = new URL(location);
+    url.search = sp;
+    history.replaceState(history.state, document.title, url);
+}
+
 function load_param() {
     param.width = document.getElementById("width").value;
     param.height = document.getElementById("height").value;
     param.effort = document.getElementById("effort").value;
     param.scale = document.getElementById("scale").value;
     param.palette = {
-        a: document.getElementById("pal1").value,
-        b: document.getElementById("pal2").value,
+        "0": document.getElementById("pal1").value,
+        "1": document.getElementById("pal2").value,
     };
 }
 
 function redraw() {
     load_param();
+    update_url();
+
+    pattern.palette = {"_":"#888888", ...param.palette};
+    pattern.redraw();
+    mask.redraw();
 
     ctx.clearRect(0,0,canvas.width,canvas.height);
 
@@ -103,16 +130,26 @@ function recompute() {
     result = null;
     redraw();
 
-    let command = `new Validity(${param.width},${param.height}, 2,2, "ab", ["aaaa","aabb","abab","abba","baaa","babb","bbab","bbba"]).sample(${param.effort})`;
+    let valids = [ ];
+    for(let y of range(pattern.pic.height-1)) {
+        for(let x of range(pattern.pic.width-1)) {
+            let word = pattern.pic.get_part(x,y,2,2).word;
+            if (word.search("_") < 0)
+                valids.push(word);
+        }
+    }
+
+    console.log(valids);
+
+    let command = `new Validity(${param.width},${param.height}, 2,2, "01", ${JSON.stringify(valids)}).sample(${param.effort})`;
     job(command, (msg)=> {
         result = msg;
         redraw();
     });
 }
 
-pattern.redraw();
-mask.redraw();
-redraw();
-recompute();
 
+
+read_url();
+recompute();
 </script>

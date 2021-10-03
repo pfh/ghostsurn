@@ -55,8 +55,10 @@ class Picture {
     }
 
     get_part(x,y,w,h) {
-        new_word = "";
-        //...
+        let new_word = "";
+        for(let i of range(h))
+            new_word += this.word.slice((y+i)*this.width+x,(y+i)*this.width+x+w);
+        return new Picture(w,h,new_word);
     }
 }
 
