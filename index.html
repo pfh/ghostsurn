@@ -15,34 +15,46 @@ body { font-family: sans-serif; margin: 1em 1em 1em 1em; }
 
 <div style="float: left; margin-right: 2em; margin-bottom: 2em;">
     <div class=grid>
-      <div class=item>Pattern</div>
-      <div class=item><canvas id=pattern width=60 height=60 class=clicky></canvas></div>
-      <div class=item>Mask</div>
-      <div class=item><canvas id=mask width=60 height=60 class=clicky></canvas></div>
       <div class=item>Palette</div>
       <div class=item>
         <input type=color id=pal0 onchange="redraw()">
         <input type=color id=pal1 onchange="redraw()">
         <input type=color id=pal2 onchange="redraw()">
       </div>
+      <div class=item>Pattern</div>
+      <div class=item><canvas id=pattern width=60 height=60 class=clicky></canvas></div>
+      <div class=item>Mask</div>
+      <div class=item><canvas id=mask width=60 height=60 class=clicky></canvas></div>
       <div class=item>Width</div>
-      <div class=item><input type=number id=width min=1 onchange="recompute()"></div>
+      <div class=item><input type=number id=width min=1 oninput="recompute()"></div>
       <div class=item>Height</div>
-      <div class=item><input type=number id=height min=1 onchange="recompute()"></div>    
+      <div class=item><input type=number id=height min=1 oninput="recompute()"></div>    
       <div class=item>Effort</div>
-      <div class=item><input type=number id=effort min=1 onchange="recompute()"></div>
+      <div class=item><input type=number id=effort min=1 oninput="recompute()"></div>
       <div class=item>Scale</div>
-      <div class=item><input type=number id=scale min=1 max=100 onchange="redraw()"></div>
+      <div class=item><input type=number id=scale min=1 max=100 oninput="redraw()"></div>
       <div class=item></div>
       <div class=item><button id=again onclick="recompute()">Again</button></div>
     </div>
+    
+    <div id=status></div>
 </div>
 
 <div>
   <canvas id=plot onmousedown="on_plot_mousedown()"></canvas>
 </div>
 
-<p>&nbsp;</p>
+<p style="clear: both">
+This app aims to produce a layout drawn uniformly at random from the set of all possible valid layouts. The randomness of the draw is not 100% perfect, but perfection can be approached by increasing the "effort" parameter.
+</p>
+
+<p>
+To assess the quality of the resulting layout, click and hold on the layout. If it flickers between many different layouts, especially at the top, it is a decent random sample. If it doesn't then the layout might not be a good representative of the set of all valid layouts.
+</p>
+
+<p>
+If the quality is poor, increase the "effort".
+</p>
 
 <script src=sampler.js></script>
 <script src=interface.js></script>
@@ -71,7 +83,6 @@ function job(command, callback) {
         worker = new Worker("worker.js");
         worker.onmessage = function(msg) {
             callback(msg.data);
-            ready = true;
         }
     }
     ready = false;
@@ -87,7 +98,7 @@ function read_url() {
     document.getElementById("pal0").value = sp_get_str(sp, "pal0", "#eeffff");
     document.getElementById("pal1").value = sp_get_str(sp, "pal1", "#0000ff");
     document.getElementById("pal2").value = sp_get_str(sp, "pal2", "#008800");
-
+    
     pattern.pic.word = sp_get_fixed_str(sp, "pattern", "_".repeat(pattern.pic.width*pattern.pic.height));
     mask.pic.word = sp_get_fixed_str(sp, "mask", "0".repeat(mask.pic.width*mask.pic.height));
 }
@@ -103,10 +114,11 @@ function update_url() {
     sp.set("pal0",param.palette["0"]);
     sp.set("pal1",param.palette["1"]);
     sp.set("pal2",param.palette["2"]);
-
-    let url = new URL(location);
+    
+    let url = new URL(location.href);
     url.search = sp;
-    history.replaceState(history.state, document.title, url);
+    if (url != location.href)
+        history.replaceState(history.state, document.title, url);
 }
 
 function load_param() {
@@ -135,27 +147,36 @@ function on_plot_mousedown() {
 function redraw() {
     load_param();
     update_url();
-
+    
+    let status = "";
+    if (result !== null)
+        status = `Success ${result.words.length}`;
+    else if (worker !== null && !ready)
+        status = "Running";
+    document.getElementById("status").innerHTML = `${status}`;
+    
     pattern.palette = {"_":"#cccccc", ...param.palette};
     pattern.redraw();
     mask.redraw();
-
+    
     ctx.clearRect(0,0,canvas.width,canvas.height);
-
+    
     if (result === null) return;
-
+    
     if (result.words.length == 0) return;
-
+    
     let scale = param.scale;
     let word = result.words[ Math.floor(result.words.length*which) ];
-
+    
     canvas.width = result.width*scale;
     canvas.height = result.height*scale;
-
+    
     ctx.clearRect(0,0,canvas.width,canvas.height);
-
-    for(let y of range(result.height)) {
+    
+    outer: for(let y of range(result.height)) {
         for(let x of range(result.width)) {
+            if (y*result.width+x >= word.length) break outer;
+            
             ctx.fillStyle = param.palette[word[y*result.width+x]];
             ctx.fillRect(x*scale,y*scale,scale,scale);
         }
@@ -165,31 +186,58 @@ function redraw() {
 function recompute() {
     load_param();
     result = null;
-    redraw();
-
+    
+    let xs = [ ];
+    let ys = [ ];
+    for(let y of range(mask.pic.height)) {
+        for(let x of range(mask.pic.width)) {
+            if (mask.pic.get(x,y) != "0") {
+                xs.push(x);
+                ys.push(y);
+            }
+        }
+    }
+    
+    let minx = Math.min(mask.pic.width, ...xs);
+    xs = xs.map(x => x-minx);
+    let miny = Math.min(mask.pic.height, ...ys);
+    ys = ys.map(y => y-miny);
+    
+    let maxx = Math.max(0, ...xs);
+    let maxy = Math.max(0, ...ys);
+     
     let patpics = [ pattern.pic ];
     for(let i of range(3))
         patpics.push( patpics[patpics.length-1].get_rot() );
-
+    
     let valids = new Set();
     for(let patpic of patpics) {
-        for(let y of range(patpic.height-1)) {
-            for(let x of range(patpic.width-1)) {
-                let word = patpic.get_part(x,y,2,2).word;
+        for(let y of range(patpic.height-maxy-1)) {
+            for(let x of range(patpic.width-maxx-1)) {
+                //let word = patpic.get_part(x,y,2,2).word;
+                let word = "";
+                for(let i of range(xs.length))
+                    word += patpic.get(x+xs[i],y+ys[i]);
                 if (word.search("_") < 0)
                     valids.add(word);
             }
         }
     }
-
-    console.log(valids);
-
+    
+    let xs_str = JSON.stringify(xs);
+    let ys_str = JSON.stringify(ys);
     let valids_str = JSON.stringify(Array.from(valids));
-    let command = `new Validity(${param.width},${param.height}, 2,2, "012", ${valids_str}).sample(${param.effort})`;
+    let command = `run_job(
+        ${param.width}, ${param.height}, 
+        ${xs_str}, ${ys_str}, ${valids_str}, ${param.effort})`;
     job(command, (msg)=> {
         result = msg;
+        if (result.finished)
+            ready = true;
         redraw();
     });
+    
+    redraw();
 }
 
 

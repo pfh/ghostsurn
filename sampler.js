@@ -1,6 +1,7 @@
 "use strict";
 
 // TODO: WaveFunctionCollapse validity checking
+// TODO: weight by compressability (see WFC entropy heuristic)
 
 
 function* range(length) {
@@ -14,9 +15,11 @@ function shuffle(array) {
     }
 }
 
-function get_samples(n, choices, effort, valid) {
+function get_samples(n, choices, effort, valid, callback) {
     let n_choices = choices.length;
     let words = [ "" ];
+    
+    let last_callback = 0;
 
     for(let i of range(n)) {
         let todo = Array.from(range(words.length * n_choices));
@@ -31,52 +34,53 @@ function get_samples(n, choices, effort, valid) {
         }
 
         words = new_words;
+        
+        if (callback !== null && Date.now() > last_callback + 10) {
+            callback(words);
+            last_callback = Date.now();
+        }
     }
 
     return words;
 }
 
-class Picture {
-    constructor(width, height, initial) {
+class Validity {
+    constructor(width, height, choices) {
         this.width = width;
         this.height = height;
-        if (initial.length == 1)
-            initial = initial.repeat(width*height);
-        this.word = initial;
+        this.choices = choices;
     }
 
-    get(x,y) {
-        return this.word[y*this.width+x];
-    }
+    sample(effort, callback) {
+        let resulter = (words, finished) => ({ 
+            words:words, 
+            effort:effort, 
+            finished:finished, 
+            ...this
+        });
+        function callback2(words) { 
+            if (callback !== null)
+                callback(resulter(words, false)); 
+        }
 
-    set(x,y,c) {
-        let i = y*this.width+x;
-        this.word = this.word.slice(0,i)+c+this.word.slice(i+1,this.width*this.height);
-    }
+        let words = get_samples(
+            this.width*this.height, 
+            this.choices, 
+            effort, 
+            this.check.bind(this),
+            callback2);
 
-    get_part(x,y,w,h) {
-        let new_word = "";
-        for(let i of range(h))
-            new_word += this.word.slice((y+i)*this.width+x,(y+i)*this.width+x+w);
-        return new Picture(w,h,new_word);
-    }
-
-    get_rot() {
-        let new_word = "";
-        for(let x=this.width-1;x>=0;x--)
-            for(let y=0;y<this.height;y++)
-                new_word += this.get(x,y);
-        return new Picture(this.height, this.width, new_word);
+        return resulter(words, true);
     }
 }
 
-class Validity {
-    constructor(width, height, pat_width, pat_height, choices, valids) {
-        this.width = width;
-        this.height = height;
+
+class Validity_block extends Validity {
+    constructor(width, height, choices, pat_width, pat_height, valids) {
+        super(width, height, choices);
+
         this.pat_width = pat_width;
         this.pat_height = pat_height;
-        this.choices = choices;
 
         let n = this.pat_width*this.pat_height;
         this.valid = Array.from(range(n+1), i => new Set());
@@ -85,16 +89,6 @@ class Validity {
                 this.valid[i].add( word.slice(0,i) );
             }
         }
-    }
-
-    sample(effort) {
-        let words = get_samples(
-            this.width*this.height, 
-            this.choices, 
-            effort, 
-            this.check.bind(this));
-
-        return {words:words, effort:effort, ...this};
     }
 
     check(word) {
@@ -133,5 +127,67 @@ class Validity {
     }
 }
 
+class Validity_pat extends Validity {
+    constructor(width, height, xs, ys, valids) {
+        // xs and ys should be in raster order
+        
+        let choices = new Set();
+        for(let word of valids)
+            for(let choice of word)
+                choices.add(choice);
+        choices = Array.from(choices);
+        
+        super(width, height, choices);
+        
+        let n = xs.length;
+        xs = xs.map(x => x-xs[n-1]);
+        ys = ys.map(y => y-ys[n-1]);
+
+        this.xs = xs;
+        this.ys = ys;
+
+        this.valid = [ ];
+        for(let i=0;i<=n;i++) {
+            for(let j=i+1;j<=n;j++) {
+                let a_valid = {
+                    xs : xs.slice(i,j).map(x => x-xs[j-1]),
+                    ys : ys.slice(i,j).map(y => y-ys[j-1]),
+                    words : new Set()
+                };                 
+                for(let word of valids) {
+                    a_valid.words.add( word.slice(i,j) );
+                }
+                this.valid[this.valid.length] = a_valid;
+            }
+        }
+    }
+    
+    check(word) {
+        let i = word.length-1;
+        let x_last = i % this.width;
+        let y_last = (i / this.width)>>0;
+
+        outer: for(let valid of this.valid) {
+            let subword = "";
+            for(let i=0;i<valid.xs.length;i++) {
+                let y = y_last + valid.ys[i];
+                let x = x_last + valid.xs[i];
+                if (x < 0 || y < 0 || x >= this.width)
+                    continue outer;
+                subword += word[y*this.width+x];
+            }
+        
+            if (!valid.words.has(subword))
+                return false;
+        }
+        
+        return true;
+    }
+}
 
 
+function run_job(width, height, xs, ys, valids, effort) {
+    let validity = new Validity_pat(width, height, xs,ys,valids);
+    let result = validity.sample(effort, result => self.postMessage(result));        
+    self.postMessage(result);
+}
