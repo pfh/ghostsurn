@@ -1,11 +1,17 @@
 "use strict";
 
+// TODO: multiple "masks"
+//       A color choice is valid if each position in each mask is satisfied by a part of the pattern picture.
 // TODO: WaveFunctionCollapse validity checking
 // TODO: weight by compressability (see WFC entropy heuristic)
 
 
 function* range(length) {
     for(let i=0;i<length;i++) yield i;
+}
+
+function random_choice(array) {
+    return array[Math.floor(array.length * Math.random())];
 }
 
 function shuffle(array) {
@@ -44,6 +50,7 @@ function get_samples(n, choices, effort, valid, callback) {
     return words;
 }
 
+
 class Validity {
     constructor(width, height, choices) {
         this.width = width;
@@ -75,62 +82,8 @@ class Validity {
 }
 
 
-class Validity_block extends Validity {
-    constructor(width, height, choices, pat_width, pat_height, valids) {
-        super(width, height, choices);
-
-        this.pat_width = pat_width;
-        this.pat_height = pat_height;
-
-        let n = this.pat_width*this.pat_height;
-        this.valid = Array.from(range(n+1), i => new Set());
-        for(let i of range(n+1)) {
-            for(let word of valids) {
-                this.valid[i].add( word.slice(0,i) );
-            }
-        }
-    }
-
-    check(word) {
-        let i = word.length-1;
-        let x_last = i % this.width;
-        let y_last = (i / this.width)>>0;
-
-        for(let pat_n=this.pat_width*this.pat_height;pat_n>0;pat_n--) {
-            let pat_x_last = (pat_n-1) % this.pat_width;
-            let pat_y_last = ((pat_n-1) / this.pat_width)>>0;
-            let x_start = x_last - pat_x_last;
-            let y_start = y_last - pat_y_last;
-
-            if (x_start < 0 ||
-                y_start < 0 || 
-                x_start+this.pat_width > this.width ||
-                y_start+this.pat_height > this.height)
-                continue;
-
-            let subword = "";
-            for(let i=0;i<pat_n;i++) {
-                let y = y_start + ((i/this.pat_width)>>0);
-                let x = x_start + i%this.pat_width;
-                subword += word[y*this.width+x];
-            }
-        
-            if (!this.valid[pat_n].has(subword))
-                return false;
-            
-            // Finish early ?????????????????
-            if (pat_x_last == 0)
-                break;
-        }
-        
-        return true;
-    }
-}
-
 class Validity_pat extends Validity {
     constructor(width, height, xs, ys, valids) {
-        // xs and ys should be in raster order
-        
         let choices = new Set();
         for(let word of valids)
             for(let choice of word)
@@ -139,45 +92,48 @@ class Validity_pat extends Validity {
         
         super(width, height, choices);
         
-        let n = xs.length;
-        xs = xs.map(x => x-xs[n-1]);
-        ys = ys.map(y => y-ys[n-1]);
+        this.checks = [ ];
+        for(let i=0;i<this.width*this.height;i++) {
+            let x_last = i % this.width;
+            let y_last = (i / this.width)>>0;
+            
+            this.checks[i] = [ ];
+            
+            for(let j=0;j<xs.length;j++) {
+                let valid_index = [ ];
+                let word_index = [ ];
 
-        this.xs = xs;
-        this.ys = ys;
-
-        this.valid = [ ];
-        for(let i=0;i<=n;i++) {
-            for(let j=i+1;j<=n;j++) {
-                let a_valid = {
-                    xs : xs.slice(i,j).map(x => x-xs[j-1]),
-                    ys : ys.slice(i,j).map(y => y-ys[j-1]),
-                    words : new Set()
-                };                 
-                for(let word of valids) {
-                    a_valid.words.add( word.slice(i,j) );
+                for(let k=0;k<xs.length;k++) {
+                    let y = y_last + ys[k]-ys[j];
+                    let x = x_last + xs[k]-xs[j];
+                    if (x < 0 || y < 0 || x >= this.width || y*this.width+x > i)
+                        continue;
+                    valid_index.push(k);
+                    word_index.push(y*this.width+x);
                 }
-                this.valid[this.valid.length] = a_valid;
+                
+                if (valid_index.length <= 1) 
+                    continue;
+                
+                let subvalids = new Set();
+                for(let valid of valids) {
+                    subvalids.add( valid_index.map(j => valid[j]).join("") );
+                }
+                
+                this.checks[i].push({
+                    word_index:word_index,
+                    subvalids: subvalids
+                });
             }
         }
     }
     
     check(word) {
         let i = word.length-1;
-        let x_last = i % this.width;
-        let y_last = (i / this.width)>>0;
-
-        outer: for(let valid of this.valid) {
-            let subword = "";
-            for(let i=0;i<valid.xs.length;i++) {
-                let y = y_last + valid.ys[i];
-                let x = x_last + valid.xs[i];
-                if (x < 0 || y < 0 || x >= this.width)
-                    continue outer;
-                subword += word[y*this.width+x];
-            }
         
-            if (!valid.words.has(subword))
+        for(let check of this.checks[i]) {
+            let subword = check.word_index.map(i => word[i]).join("");
+            if (!check.subvalids.has(subword))
                 return false;
         }
         

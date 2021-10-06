@@ -32,6 +32,24 @@ class Picture {
                 new_word += this.get(x,y);
         return new Picture(this.height, this.width, new_word);
     }
+    
+    get_string() {
+        return `${this.width}|${this.height}|${this.word}`;
+    }
+}
+
+function string_to_picture(str) {
+    let parts = str.split("|");
+    if (parts.length != 3)
+        return null;
+        
+    let [width,height,word] = parts;
+    width = parseInt(width);
+    height = parseInt(height);
+    if (width * height !== word.length)
+        return null;
+
+    return new Picture(width, height, word);
 }
 
 
@@ -52,6 +70,13 @@ function sp_get_str(sp, field, default_value) {
 function sp_get_fixed_str(sp, field, default_value) {
     let result = sp.get(field);
     if (typeof result !== "string" || result.length != default_value.length)
+        result = default_value;
+    return result;
+}
+
+function sp_get_picture(sp, field, default_value) {
+    let result = string_to_picture(sp.get(field));
+    if (result === null)
         result = default_value;
     return result;
 }
@@ -86,11 +111,18 @@ class Click_map {
             }
         }    
     }
-
-    click(e) {
+    
+    where(e) {
         let rect = this.canvas.getBoundingClientRect();
         let x = ((e.clientX-rect.left)/this.scale)>>0;
         let y = ((e.clientY-rect.top)/this.scale)>>0;
+        x = Math.max(0,Math.min(this.pic.width-1,x));
+        y = Math.max(0,Math.min(this.pic.height-1,y));
+        return [x,y];
+    }
+
+    click(e) {
+        let [x,y] = this.where(e);
         let c = this.choices[(this.choices.search(this.pic.get(x,y))+1)%this.choices.length];
         
         if (x != this.start_x || y != this.start_y)
@@ -103,16 +135,14 @@ class Click_map {
     }
     
     down(e) {
-        let rect = this.canvas.getBoundingClientRect();
-        this.start_x = ((e.clientX-rect.left)/this.scale)>>0;
-        this.start_y = ((e.clientY-rect.top)/this.scale)>>0;
+        let [x,y] = this.where(e);
+        this.start_x = x;
+        this.start_y = y;
         this.start_c = this.pic.get(this.start_x,this.start_y);
     }
     
     move(e) {
-        let rect = this.canvas.getBoundingClientRect();
-        let x = ((e.clientX-rect.left)/this.scale)>>0;
-        let y = ((e.clientY-rect.top)/this.scale)>>0;
+        let [x,y] = this.where(e);
         if (e.buttons == 1 && 
             this.start_c != null && 
             this.start_c != this.pic.get(x,y)) {

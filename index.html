@@ -1,6 +1,8 @@
 <!doctype html>
 <html lang=en>
 <meta charset=utf-8>
+<link rel="icon" type="image/png" href="favicon.png">
+
 <style>
 body { font-family: sans-serif; margin: 1em 1em 1em 1em; }
 .clicky { border: 1px solid black; }
@@ -25,6 +27,14 @@ body { font-family: sans-serif; margin: 1em 1em 1em 1em; }
       <div class=item><canvas id=pattern width=60 height=60 class=clicky></canvas></div>
       <div class=item>Mask</div>
       <div class=item><canvas id=mask width=60 height=60 class=clicky></canvas></div>
+      <div class=item>Rotation</div>
+      <div class=item>
+        <select id=rotation oninput="recompute()">
+          <option value="">None</option>
+          <option value="90">90° rotations</option>
+          <option value="180">180° rotation</option>
+        </select>
+      </div>
       <div class=item>Width</div>
       <div class=item><input type=number id=width min=1 oninput="recompute()"></div>
       <div class=item>Height</div>
@@ -34,10 +44,13 @@ body { font-family: sans-serif; margin: 1em 1em 1em 1em; }
       <div class=item>Scale</div>
       <div class=item><input type=number id=scale min=1 max=100 oninput="redraw()"></div>
       <div class=item></div>
-      <div class=item><button id=again onclick="recompute()">Again</button></div>
+      <div class=item>
+        <button id=again onclick="recompute()" title="draw a new sample">Again</button>
+        <button id=randomize onclick="randomize()" title="apply variable reinforcement to the user">Randomize pattern</button>
+      </div>
     </div>
     
-    <div id=status></div>
+    <div id=status style="border: 1px solid #ddd; background: #f8f8f8; padding: 0.5em;"></div>
 </div>
 
 <div>
@@ -49,11 +62,7 @@ This app aims to produce a layout drawn uniformly at random from the set of all 
 </p>
 
 <p>
-To assess the quality of the resulting layout, click and hold on the layout. If it flickers between many different layouts, especially at the top, it is a decent random sample. If it doesn't then the layout might not be a good representative of the set of all valid layouts.
-</p>
-
-<p>
-If the quality is poor, increase the "effort".
+To assess the quality of the resulting layout, click and hold on the layout. If it flickers between many different layouts, especially at the top, it is a decent random sample. If it doesn't then the layout might not be a good representative of the set of all valid layouts and "effort" should be increased.
 </p>
 
 <script src=sampler.js></script>
@@ -73,9 +82,9 @@ let which = 0;
 let param = { };
 
 let pattern = new Click_map(
-    "pattern", new Picture(10,10,"_"), "_012", null, null);
+    "pattern", null, "_012", null, null);
 let mask = new Click_map(
-    "mask", new Picture(5,5, "0"), "01", {"0":"#cccccc","1":"black"}, null);
+    "mask", null, "01", {"0":"#cccccc","1":"black"}, null);
 
 function job(command, callback) {
     if (!ready) {
@@ -91,6 +100,7 @@ function job(command, callback) {
 
 function read_url() {
     let sp = new URLSearchParams(location.search);
+    document.getElementById("rotation").value = sp_get_str(sp, "rotation", "90");
     document.getElementById("width").value = sp_get_int(sp, "width", 20);
     document.getElementById("height").value = sp_get_int(sp, "height", 20);
     document.getElementById("effort").value = sp_get_int(sp, "effort", 100);
@@ -99,18 +109,19 @@ function read_url() {
     document.getElementById("pal1").value = sp_get_str(sp, "pal1", "#0000ff");
     document.getElementById("pal2").value = sp_get_str(sp, "pal2", "#008800");
     
-    pattern.pic.word = sp_get_fixed_str(sp, "pattern", "_".repeat(pattern.pic.width*pattern.pic.height));
-    mask.pic.word = sp_get_fixed_str(sp, "mask", "0".repeat(mask.pic.width*mask.pic.height));
+    pattern.pic = sp_get_picture(sp, "pattern", new Picture(10,10,"_"));
+    mask.pic = sp_get_picture(sp, "mask", new Picture(5,5,"0"));
 }
 
 function update_url() {
     let sp = new URLSearchParams();
+    sp.set("rotation",param.rotation);
     sp.set("width",param.width);
     sp.set("height",param.height);
     sp.set("effort",param.effort);
     sp.set("scale",param.scale);
-    sp.set("pattern",pattern.pic.word);
-    sp.set("mask",mask.pic.word);
+    sp.set("pattern",pattern.pic.get_string());
+    sp.set("mask",mask.pic.get_string());
     sp.set("pal0",param.palette["0"]);
     sp.set("pal1",param.palette["1"]);
     sp.set("pal2",param.palette["2"]);
@@ -122,6 +133,7 @@ function update_url() {
 }
 
 function load_param() {
+    param.rotation = document.getElementById("rotation").value;
     param.width = document.getElementById("width").value;
     param.height = document.getElementById("height").value;
     param.effort = document.getElementById("effort").value;
@@ -149,10 +161,14 @@ function redraw() {
     update_url();
     
     let status = "";
-    if (result !== null)
-        status = `Success ${result.words.length}`;
+    if (result !== null && result.finished && result.words.length == 0)
+        status = `Failed to find a layout`;
+    else if (result !== null && result.finished)
+        status = `Success`;
+    else if (result !== null)
+        status = `Running`;
     else if (worker !== null && !ready)
-        status = "Running";
+        status = `Running`;
     document.getElementById("status").innerHTML = `${status}`;
     
     pattern.palette = {"_":"#cccccc", ...param.palette};
@@ -207,8 +223,12 @@ function recompute() {
     let maxy = Math.max(0, ...ys);
      
     let patpics = [ pattern.pic ];
-    for(let i of range(3))
-        patpics.push( patpics[patpics.length-1].get_rot() );
+    if (param.rotation == "90") {
+        for(let i of range(3))
+            patpics.push( patpics[patpics.length-1].get_rot() );
+    } else if (param.rotation == "180") {
+        patpics.push( patpics[patpics.length-1].get_rot().get_rot() );
+    }
     
     let valids = new Set();
     for(let patpic of patpics) {
@@ -240,6 +260,16 @@ function recompute() {
     redraw();
 }
 
+
+function randomize() {
+    for(let y of range(pattern.pic.height))
+    for(let x of range(pattern.pic.width))
+    if (pattern.pic.get(x,y) != "_") {
+        pattern.pic.set(x,y, random_choice("012"));
+    }
+
+    recompute();
+}
 
 pattern.onchange = recompute;
 mask.onchange = recompute;
