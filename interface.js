@@ -75,9 +75,12 @@ function sp_get_fixed_str(sp, field, default_value) {
 }
 
 function sp_get_picture(sp, field, default_value) {
-    let result = string_to_picture(sp.get(field));
+    let result = sp.get(field);
     if (result === null)
-        result = default_value;
+        return default_value;
+    result = string_to_picture(result);
+    if (result === null)
+        return default_value;
     return result;
 }
 

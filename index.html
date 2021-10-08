@@ -13,7 +13,7 @@ body { font-family: sans-serif; margin: 1em 1em 1em 1em; }
 
 </style>
 <title>ghostsurn</title>
-<h1>ghostsurn</h1>
+<h1>ghostsurn 0.1</h1>
 
 <div style="float: left; margin-right: 2em; margin-bottom: 2em;">
     <div class=grid>
@@ -53,8 +53,13 @@ body { font-family: sans-serif; margin: 1em 1em 1em 1em; }
     <div id=status style="border: 1px solid #ddd; background: #f8f8f8; padding: 0.5em;"></div>
 </div>
 
-<div>
+<div style="float: left">
   <canvas id=plot onmousedown="on_plot_mousedown()"></canvas>
+</div>
+
+<div style="float: right">
+  <b>Examples</b><br/><br/>
+  <div id=examples></div>
 </div>
 
 <p style="clear: both">
@@ -67,9 +72,12 @@ To assess the quality of the resulting layout, click and hold on the layout. If 
 
 <script src=sampler.js></script>
 <script src=interface.js></script>
+<script src=examples.js></script>
 
 <script>
 "use strict";
+
+let get = (id) => document.getElementById(id);
 
 let canvas = document.getElementById("plot");
 let ctx = canvas.getContext("2d");
@@ -99,15 +107,19 @@ function job(command, callback) {
 }
 
 function read_url() {
-    let sp = new URLSearchParams(location.search);
-    document.getElementById("rotation").value = sp_get_str(sp, "rotation", "90");
-    document.getElementById("width").value = sp_get_int(sp, "width", 20);
-    document.getElementById("height").value = sp_get_int(sp, "height", 20);
-    document.getElementById("effort").value = sp_get_int(sp, "effort", 100);
-    document.getElementById("scale").value = sp_get_int(sp, "scale", 10);
-    document.getElementById("pal0").value = sp_get_str(sp, "pal0", "#eeffff");
-    document.getElementById("pal1").value = sp_get_str(sp, "pal1", "#0000ff");
-    document.getElementById("pal2").value = sp_get_str(sp, "pal2", "#008800");
+    let sp = location.search;
+    if (sp == "") 
+        sp = examples[0][1];
+    
+    sp = new URLSearchParams(sp);
+    get("rotation").value = sp_get_str(sp, "rotation", "90");
+    get("width").value = sp_get_int(sp, "width", 20);
+    get("height").value = sp_get_int(sp, "height", 20);
+    get("effort").value = sp_get_int(sp, "effort", 100);
+    get("scale").value = sp_get_int(sp, "scale", 10);
+    get("pal0").value = sp_get_str(sp, "pal0", "#e2d810");
+    get("pal1").value = sp_get_str(sp, "pal1", "#d9138a");
+    get("pal2").value = sp_get_str(sp, "pal2", "#12a4d9");
     
     pattern.pic = sp_get_picture(sp, "pattern", new Picture(10,10,"_"));
     mask.pic = sp_get_picture(sp, "mask", new Picture(5,5,"0"));
@@ -133,15 +145,15 @@ function update_url() {
 }
 
 function load_param() {
-    param.rotation = document.getElementById("rotation").value;
-    param.width = document.getElementById("width").value;
-    param.height = document.getElementById("height").value;
-    param.effort = document.getElementById("effort").value;
-    param.scale = document.getElementById("scale").value;
+    param.rotation = get("rotation").value;
+    param.width = get("width").value;
+    param.height = get("height").value;
+    param.effort = get("effort").value;
+    param.scale = get("scale").value;
     param.palette = {
-        "0": document.getElementById("pal0").value,
-        "1": document.getElementById("pal1").value,
-        "2": document.getElementById("pal2").value,
+        "0": get("pal0").value,
+        "1": get("pal1").value,
+        "2": get("pal2").value,
     };
 }
 
@@ -187,7 +199,8 @@ function redraw() {
     canvas.width = result.width*scale;
     canvas.height = result.height*scale;
     
-    ctx.clearRect(0,0,canvas.width,canvas.height);
+    ctx.fillStyle = "#f8f8f8";
+    ctx.fillRect(0,0,canvas.width,canvas.height);
     
     outer: for(let y of range(result.height)) {
         for(let x of range(result.width)) {
@@ -262,10 +275,21 @@ function recompute() {
 
 
 function randomize() {
+    let pool = [ ];
     for(let y of range(pattern.pic.height))
     for(let x of range(pattern.pic.width))
     if (pattern.pic.get(x,y) != "_") {
-        pattern.pic.set(x,y, random_choice("012"));
+        pool.push(pattern.pic.get(x,y));
+    }
+    
+    shuffle(pool);
+    
+    let i=0;
+    
+    for(let y of range(pattern.pic.height))
+    for(let x of range(pattern.pic.width))
+    if (pattern.pic.get(x,y) != "_") {
+        pattern.pic.set(x,y, pool[i++]);
     }
 
     recompute();
@@ -273,6 +297,9 @@ function randomize() {
 
 pattern.onchange = recompute;
 mask.onchange = recompute;
+
+for(let item of examples)
+    get("examples").innerHTML += `<a href="?${item[1]}">${item[0]}</a><br/>`;
 
 read_url();
 recompute();
