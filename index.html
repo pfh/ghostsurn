@@ -186,8 +186,15 @@ function redraw() {
     pattern.palette = {"_":"#cccccc", ...param.palette};
     pattern.redraw();
     mask.redraw();
+
+    canvas.width = param.width*param.scale;
+    canvas.height = param.height*param.scale;
     
-    ctx.clearRect(0,0,canvas.width,canvas.height);
+    if (result === null || result.words.length > 0)
+        ctx.fillStyle = "#f8f8f8";
+    else
+        ctx.fillStyle = "#ffffff"    
+    ctx.fillRect(0,0,canvas.width,canvas.height);
     
     if (result === null) return;
     
@@ -195,12 +202,6 @@ function redraw() {
     
     let scale = param.scale;
     let word = result.words[ Math.floor(result.words.length*which) ];
-    
-    canvas.width = result.width*scale;
-    canvas.height = result.height*scale;
-    
-    ctx.fillStyle = "#f8f8f8";
-    ctx.fillRect(0,0,canvas.width,canvas.height);
     
     outer: for(let y of range(result.height)) {
         for(let x of range(result.width)) {
