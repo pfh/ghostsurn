@@ -4,29 +4,58 @@
 <link rel="icon" type="image/png" href="favicon.png">
 
 <style>
+
 body { font-family: sans-serif; margin: 1em 1em 1em 1em; }
 .clicky { border: 1px solid black; }
 
 .grid { display: grid; width: 100%; grid-template-columns: max-content max-content; }
 .item { padding: 0em 1em 1em 0em; }
+
+table { border-collapse: collapse; }
+td { 
+    text-align: center; 
+    margin: 0; padding: 0; padding-right: 1em; 
+    vertical-align: top;
+}
+
+input[type=radio] {
+    width: 1.5em;
+    height: 1.5em;
+}
+
 </style>
 
 </style>
 <title>ghostsurn</title>
 <h1>ghostsurn 0.1</h1>
 
-<div style="float: left; margin-right: 2em; margin-bottom: 2em;">
+<div style="float: left; margin-top: 1em; margin-right: 2em; margin-bottom: 2em;">
     <div class=grid>
       <div class=item>Palette</div>
       <div class=item>
-        <input type=color id=pal0 onchange="redraw()">
-        <input type=color id=pal1 onchange="redraw()">
-        <input type=color id=pal2 onchange="redraw()">
+        <table>
+          <tr>
+            <td><input type=color id=pal0 onchange="redraw()"></td>
+            <td><input type=color id=pal1 onchange="redraw()"></td>
+            <td><input type=color id=pal2 onchange="redraw()"></td>
+            <td>Clear</td>
+          </tr>
+          <tr>
+            <td><input type=radio id=pal_select0 name=pal_select value=0 checked></td>
+            <td><input type=radio id=pal_select1 name=pal_select value=1></td>
+            <td><input type=radio id=pal_select2 name=pal_select value=2></td>
+            <td><input type=radio id=pal_select_ name=pal_select value=_></td>
+          </tr>
+        </table>
       </div>
       <div class=item>Pattern</div>
       <div class=item><canvas id=pattern width=60 height=60 class=clicky></canvas></div>
-      <div class=item>Mask</div>
-      <div class=item><canvas id=mask width=60 height=60 class=clicky></canvas></div>
+      <div class=item>Masks</div>
+      <div class=item>
+          <canvas id=mask0 width=60 height=60 class=clicky></canvas>
+          <canvas id=mask1 width=60 height=60 class=clicky></canvas>
+          <canvas id=mask2 width=60 height=60 class=clicky></canvas>
+      </div>
       <div class=item>Rotation</div>
       <div class=item>
         <select id=rotation oninput="recompute()">
@@ -53,16 +82,16 @@ body { font-family: sans-serif; margin: 1em 1em 1em 1em; }
     <div id=status style="border: 1px solid #ddd; background: #f8f8f8; padding: 0.5em;"></div>
 </div>
 
-<div style="float: left">
+<div style="float: left; margin-top: 1em;">
   <canvas id=plot onmousedown="on_plot_mousedown()"></canvas>
 </div>
 
-<div style="float: right">
+<div style="float: right; margin-top: 1em;">
   <b>Examples</b><br/><br/>
   <div id=examples></div>
 </div>
 
-<p style="clear: both">
+<p style="clear: left">
 This app aims to produce a layout drawn uniformly at random from the set of all possible valid layouts. The randomness of the draw is not 100% perfect, but perfection can be approached by increasing the "effort" parameter.
 </p>
 
@@ -90,9 +119,15 @@ let which = 0;
 let param = { };
 
 let pattern = new Click_map(
-    "pattern", null, "_012", null, null);
-let mask = new Click_map(
-    "mask", null, "01", {"0":"#cccccc","1":"black"}, null);
+    "pattern", null, "_012", null, null, 
+    ()=>document.querySelector('input[name="pal_select"]:checked').value
+);
+let mask0 = new Click_map(
+    "mask0", null, "01", {"0":"#cccccc","1":"black"}, null, null);
+let mask1 = new Click_map(
+    "mask1", null, "01", {"0":"#cccccc","1":"black"}, null, null);
+let mask2 = new Click_map(
+    "mask2", null, "01", {"0":"#cccccc","1":"black"}, null, null);
 
 function job(command, callback) {
     if (!ready) {
@@ -108,8 +143,8 @@ function job(command, callback) {
 
 function read_url() {
     let sp = location.search;
-    if (sp == "") 
-        sp = examples[0][1];
+    //if (sp == "") 
+    //    sp = examples[0][1];
     
     sp = new URLSearchParams(sp);
     get("rotation").value = sp_get_str(sp, "rotation", "90");
@@ -121,8 +156,10 @@ function read_url() {
     get("pal1").value = sp_get_str(sp, "pal1", "#d9138a");
     get("pal2").value = sp_get_str(sp, "pal2", "#12a4d9");
     
-    pattern.pic = sp_get_picture(sp, "pattern", new Picture(10,10,"_"));
-    mask.pic = sp_get_picture(sp, "mask", new Picture(5,5,"0"));
+    pattern.pic = sp_get_picture(sp, "pattern", new Picture(20,10,"_"));
+    mask0.pic = sp_get_picture(sp, "mask0", new Picture(5,5,"0"));
+    mask1.pic = sp_get_picture(sp, "mask1", new Picture(5,5,"0"));
+    mask2.pic = sp_get_picture(sp, "mask2", new Picture(5,5,"0"));
 }
 
 function update_url() {
@@ -133,7 +170,9 @@ function update_url() {
     sp.set("effort",param.effort);
     sp.set("scale",param.scale);
     sp.set("pattern",pattern.pic.get_string());
-    sp.set("mask",mask.pic.get_string());
+    sp.set("mask0",mask0.pic.get_string());
+    sp.set("mask1",mask1.pic.get_string());
+    sp.set("mask2",mask2.pic.get_string());
     sp.set("pal0",param.palette["0"]);
     sp.set("pal1",param.palette["1"]);
     sp.set("pal2",param.palette["2"]);
@@ -185,7 +224,9 @@ function redraw() {
     
     pattern.palette = {"_":"#cccccc", ...param.palette};
     pattern.redraw();
-    mask.redraw();
+    mask0.redraw();
+    mask1.redraw();
+    mask2.redraw();
 
     canvas.width = param.width*param.scale;
     canvas.height = param.height*param.scale;
@@ -217,53 +258,53 @@ function recompute() {
     load_param();
     result = null;
     
-    let xs = [ ];
-    let ys = [ ];
-    for(let y of range(mask.pic.height)) {
-        for(let x of range(mask.pic.width)) {
-            if (mask.pic.get(x,y) != "0") {
-                xs.push(x);
-                ys.push(y);
+    let specs = [ ];
+    for(let mask of [mask0,mask1,mask2]) {
+        let xs = [ ];
+        let ys = [ ];
+        for(let y of range(mask.pic.height)) {
+            for(let x of range(mask.pic.width)) {
+                if (mask.pic.get(x,y) != "0") {
+                    xs.push(x);
+                    ys.push(y);
+                }
             }
         }
-    }
-    
-    let minx = Math.min(mask.pic.width, ...xs);
-    xs = xs.map(x => x-minx);
-    let miny = Math.min(mask.pic.height, ...ys);
-    ys = ys.map(y => y-miny);
-    
-    let maxx = Math.max(0, ...xs);
-    let maxy = Math.max(0, ...ys);
-     
-    let patpics = [ pattern.pic ];
-    if (param.rotation == "90") {
-        for(let i of range(3))
-            patpics.push( patpics[patpics.length-1].get_rot() );
-    } else if (param.rotation == "180") {
-        patpics.push( patpics[patpics.length-1].get_rot().get_rot() );
-    }
-    
-    let valids = new Set();
-    for(let patpic of patpics) {
-        for(let y of range(patpic.height-maxy-1)) {
-            for(let x of range(patpic.width-maxx-1)) {
-                //let word = patpic.get_part(x,y,2,2).word;
-                let word = "";
-                for(let i of range(xs.length))
-                    word += patpic.get(x+xs[i],y+ys[i]);
-                if (word.search("_") < 0)
-                    valids.add(word);
+        
+        if (xs.length == 0) continue;
+            
+        let patpics = [ pattern.pic ];
+        if (param.rotation == "90") {
+            for(let i of range(3))
+                patpics.push( patpics[patpics.length-1].get_rot() );
+        } else if (param.rotation == "180") {
+            patpics.push( patpics[patpics.length-1].get_rot().get_rot() );
+        }
+        
+        let valids = new Set();
+        for(let patpic of patpics) {
+            for(let y=1-mask.pic.height;y<patpic.height;y++) {
+                for(let x=1-mask.pic.width;x<patpic.width;x++) {
+                    let word = "";
+                    for(let i of range(xs.length))
+                    if (x+xs[i] < 0 || x+xs[i] >= patpic.width || y+ys[i] < 0 || y+ys[i] >= patpic.height)
+                        word += "_"
+                    else
+                        word += patpic.get(x+xs[i],y+ys[i]);
+                    
+                    if (word.search("_") < 0)
+                        valids.add(word);
+                }
             }
         }
+        
+        valids = Array.from(valids);
+        
+        specs.push({xs,ys,valids});
     }
     
-    let xs_str = JSON.stringify(xs);
-    let ys_str = JSON.stringify(ys);
-    let valids_str = JSON.stringify(Array.from(valids));
-    let command = `run_job(
-        ${param.width}, ${param.height}, 
-        ${xs_str}, ${ys_str}, ${valids_str}, ${param.effort})`;
+    let specs_str = JSON.stringify(specs);
+    let command = `run_job(${param.width}, ${param.height}, ${specs_str}, ${param.effort})`;
     job(command, (msg)=> {
         result = msg;
         if (result.finished)
@@ -297,7 +338,9 @@ function randomize() {
 }
 
 pattern.onchange = recompute;
-mask.onchange = recompute;
+mask0.onchange = recompute;
+mask1.onchange = recompute;
+mask2.onchange = recompute;
 
 for(let item of examples)
     get("examples").innerHTML += `<a href="?${item[1]}">${item[0]}</a><br/>`;

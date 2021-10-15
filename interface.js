@@ -85,7 +85,7 @@ function sp_get_picture(sp, field, default_value) {
 }
 
 class Click_map {
-    constructor(id, pic, choices, palette, onchange) {
+    constructor(id, pic, choices, palette, onchange, color_get) {
         this.canvas = document.getElementById(id);
         this.ctx = this.canvas.getContext("2d");
         this.scale = 20;
@@ -93,6 +93,7 @@ class Click_map {
         this.choices = choices;
         this.palette = palette;
         this.onchange = onchange;
+        this.color_get = color_get;
         
         this.start_x = null;
         this.start_y = null;
@@ -106,11 +107,16 @@ class Click_map {
     redraw() {
         this.canvas.width = this.pic.width*this.scale;
         this.canvas.height = this.pic.height*this.scale;
+        
+        let b=0.2;
+        
+        this.ctx.fillStyle = "#ffffff";
+        this.ctx.fillRect(0,0, this.canvas.width, this.canvas.height);
 
         for(let y of range(this.pic.height)) {
             for(let x of range(this.pic.width)) {
                 this.ctx.fillStyle = this.palette[this.pic.get(x,y)];
-                this.ctx.fillRect(x*this.scale,y*this.scale,this.scale,this.scale);
+                this.ctx.fillRect(x*this.scale+b/2,y*this.scale+b/2,this.scale-b,this.scale-b);
             }
         }    
     }
@@ -126,9 +132,16 @@ class Click_map {
 
     click(e) {
         let [x,y] = this.where(e);
-        let c = this.choices[(this.choices.search(this.pic.get(x,y))+1)%this.choices.length];
+        let c;
+        if (this.color_get !== null)
+            c = this.color_get();
+        else
+            c = this.choices[(this.choices.search(this.pic.get(x,y))+1)%this.choices.length];
         
         if (x != this.start_x || y != this.start_y)
+            return;
+        
+        if (this.pic.get(x,y) == c)
             return;
         
         this.pic.set(x,y,c);

@@ -2,7 +2,11 @@
 
 // TODO: multiple "masks"
 //       A color choice is valid if each position in each mask is satisfied by a part of the pattern picture.
-// TODO: WaveFunctionCollapse validity checking
+//
+// - "join masks" as initial step, then work with one mask henceforth
+// ##   #  #    provides hex-tile masks
+//     #   #
+//
 // TODO: weight by compressability (see WFC entropy heuristic)
 
 
@@ -19,6 +23,15 @@ function shuffle(array) {
         const j = Math.floor(Math.random() * (i + 1));
         [array[i], array[j]] = [array[j], array[i]];
     }
+}
+
+function get_subword(word, indices) {
+    //let subword = "";
+    //for(let i of indices)
+    //    subword += word[i];
+    //return subword;
+    
+    return indices.map(i => word[i]).join("");
 }
 
 /* Sample a set of words produced by making [n] choices amongst [choices].
@@ -79,8 +92,10 @@ class Validity {
         
         let resulter = (result, finished) => {
             let output = { 
-                ...this,
                 ...result, 
+                width:this.width,
+                height:this.height,
+                choices:this.choices,
                 effort:effort, 
                 finished:finished
             }
@@ -158,49 +173,53 @@ class Validity_pat extends Validity {
             
             if (valid_index.length <= 1) 
                 continue;
+            
+            checks.push({word_index, valid_index});
+        }
+        
+        checks.sort( (a,b) => b.word_index.length-a.word_index.length );
+        
+        // Remove any checks entirely contained in another check.
+        // ** Assumes valids have been pruned. **
+        let c=0;
+        //console.log([checks.length]);
+        while(c<checks.length) {
+            let subsumed = false;
+            outer: for(let j=0;j<c;j++) {
+                for(let k=0;k<checks[c].word_index.length;k++)
+                if (checks[j].word_index.indexOf( checks[c].word_index[k] ) == -1)
+                       continue outer;
+                
+                subsumed = true;
+                continue
+            }
+            
+            if (subsumed) {
+                checks.splice(c,1);
+            } else
+                c++;
+        }
+        //console.log([checks.length, "to"]);
 
-            let key = JSON.stringify(valid_index);
+        for(let check of checks) {        
+            let key = JSON.stringify(check.valid_index);
             if (!this.subvalid_cache.hasOwnProperty(key)) {
                 let subvalids = new Set();
                 for(let valid of this.valids) {
-                    subvalids.add( valid_index.map(j => valid[j]).join("") );
+                    subvalids.add(Symbol.for( get_subword(valid, check.valid_index) ));
                 }
+                //check.subvalids = subvalids;
+                //console.log(["key", key]);
                 this.subvalid_cache[key] = subvalids;
             }
-            
-            checks.push({word_index, subvalids:this.subvalid_cache[key]});
+        
+            check.subvalids = this.subvalid_cache[key]
         }
         
-        //checks.sort( (a,b) => b.length-a.length );
-        //
-        //// Remove any checks entirely contained in another check.
-        //// ** Assumes valids have been pruned. **
-        //let c=0;
-        //console.log([checks.length]);
-        //while(c<checks.length) {
-        //    let subsumed = false;
-        //    outer: for(let j=0;j<c;j++) {
-        //        for(let k=0;k<checks[c].word_index.length;k++)
-        //        if (checks[j].word_index.indexOf( checks[c].word_index[k] ) == -1)
-        //               continue outer;
-        //        
-        //        subsumed = true;
-        //        continue
-        //    }
-        //    
-        //    if (subsumed) {
-        //        checks.splice(c,1);
-        //    } else
-        //        c++;
-        //}
-        //console.log([checks.length, "to"]);
-        
         return (word) => {
-            for(let check of checks) {
-                let subword = check.word_index.map(i => word[i]).join("");
-                if (!check.subvalids.has(subword))
-                    return false;
-            }
+            for(let check of checks)
+            if (!check.subvalids.has(Symbol.for( get_subword(word, check.word_index) )))
+                return false;
             
             return true;
         }
@@ -516,45 +535,93 @@ function make_stack(thick_width, thick_height, width, height, xs, ys, valids) {
     return new Validity_higher( (...p) => make_stack(thick_width, thick_height-1, ...p), width, height, xs, ys, valids )
 }
 
-
-function elaborate(x1, y1, xs, ys, valids) {    
-    let new_xs = xs.slice();
-    let new_ys = ys.slice();
+function join(x0s, y0s, valid0s, x1s, y1s, valid1s, max_memory) {    
+    let new_xs = x0s.slice();
+    let new_ys = y0s.slice();
     let new_valids = [ ];
     let grab1 = [ ];
     let must_match0 = [ ];
     let must_match1 = [ ];
+    let memory = 0;
 
-    outer: for(let i of range(xs.length)) {
-        for(let j of range(xs.length))
-        if (xs[i]+x1 == xs[j] && ys[i]+y1 == ys[j]) {
+    outer: for(let i of range(x1s.length)) {
+        for(let j of range(x0s.length))
+        if (x1s[i] == x0s[j] && y1s[i] == y0s[j]) {
             must_match0.push(j);
             must_match1.push(i);
             continue outer;
         }
         grab1.push(i);
-        new_xs.push(xs[i]+x1);
-        new_ys.push(ys[i]+y1);
+        new_xs.push(x1s[i]);
+        new_ys.push(y1s[i]);
     }
     
     let subword_valid1 = { };
-    for(let valid1 of valids) {
-       let subword = must_match1.map(i => valid1[i]).join("");
+    for(let valid1 of valid1s) {
+       let subword = get_subword(valid1, must_match1);
        if (!subword_valid1.hasOwnProperty(subword))
           subword_valid1[subword] = [ ];
         subword_valid1[subword].push(valid1);
     }
     
-    for(let valid0 of valids) {
-        let subword = must_match0.map(i => valid0[i]).join("");
+    for(let valid0 of valid0s) {
+        let subword = get_subword(valid0, must_match0);
         if (!subword_valid1.hasOwnProperty(subword))
             continue;
         for(let valid1 of subword_valid1[subword]) {
-            new_valids.push(valid0 + grab1.map(i => valid1[i]).join(""));
+            let new_word = valid0 + get_subword(valid1, grab1)
+            new_valids.push(new_word);
+            
+            memory += new_word.length;
+            if (memory > max_memory) return null;
         }
     }
     
     return {xs:new_xs, ys:new_ys, valids:new_valids};
+}
+
+function elaborate(x1, y1, xs, ys, valids, max_memory) {
+    let x1s = xs.map(x => x+x1);
+    let y1s = ys.map(y => y+y1);
+    return join(xs,ys,valids, x1s,y1s,valids, max_memory);
+
+//    let new_xs = xs.slice();
+//    let new_ys = ys.slice();
+//    let new_valids = [ ];
+//    let grab1 = [ ];
+//    let must_match0 = [ ];
+//    let must_match1 = [ ];
+//
+//    outer: for(let i of range(xs.length)) {
+//        for(let j of range(xs.length))
+//        if (xs[i]+x1 == xs[j] && ys[i]+y1 == ys[j]) {
+//            must_match0.push(j);
+//            must_match1.push(i);
+//            continue outer;
+//        }
+//        grab1.push(i);
+//        new_xs.push(xs[i]+x1);
+//        new_ys.push(ys[i]+y1);
+//    }
+//    
+//    let subword_valid1 = { };
+//    for(let valid1 of valids) {
+//       let subword = get_subword(valid1, must_match1);
+//       if (!subword_valid1.hasOwnProperty(subword))
+//          subword_valid1[subword] = [ ];
+//        subword_valid1[subword].push(valid1);
+//    }
+//    
+//    for(let valid0 of valids) {
+//        let subword = get_subword(valid0, must_match0);
+//        if (!subword_valid1.hasOwnProperty(subword))
+//            continue;
+//        for(let valid1 of subword_valid1[subword]) {
+//            new_valids.push(valid0 + get_subword(valid1, grab1));
+//        }
+//    }
+//    
+//    return {xs:new_xs, ys:new_ys, valids:new_valids};
 }
 
 
@@ -585,10 +652,10 @@ function prune(xs, ys, valids) {
                 }
             }
             
-            let good_set = new Set(valids.map(valid => must_match1.map(i => valid[i]).join("")));
+            let good_set = new Set(valids.map(valid => get_subword(valid, must_match1)));
         
             for(let valid of valids) {
-                let subword = must_match0.map(i => valid[i]).join("");
+                let subword = get_subword(valid, must_match0);
                 if (good_set.has(subword))
                     new_valids.push(valid);
             }
@@ -603,28 +670,42 @@ function prune(xs, ys, valids) {
     return valids;
 }
 
-function run_job(width, height, xs, ys, words, effort) {
+function run_job(width, height, specs, effort) {
     //let best = expand(width, height, xs,ys,words, 100000);
     //console.log(best);
 
     //let validity = new Validity_pat(width, height, xs,ys,words);
     //let validity = new Validity_WFC(width, height, xs,ys,words);
     //let validity = make_stack(Math.min(width, 0), Math.min(height, 0), width, height, xs,ys,words);
-    let spec={xs:xs,ys:ys,valids:words};
+    
+    if (specs.length == 0) specs = {xs:[], ys:[], valids:[]};
+    
+    //let spec={xs:xs,ys:ys,valids:words};
+    
+    let spec = specs[0];
     spec.valids = prune(spec.xs, spec.ys, spec.valids);
+    for(let i=1;i<specs.length;i++) {
+        spec = join(spec.xs,spec.ys,spec.valids, specs[i].xs,specs[i].ys,specs[i].valids, Infinity);
+        spec.valids = prune(spec.xs, spec.ys, spec.valids);
+    }
 
-    let n_stop = 5000;
+    let max_memory = 2e6;
     let seq = "";
-    for(let i of range(3)) {
-        if (spec.valids.length >= n_stop) break
+    let new_spec;
+    for(let i of range(4)) {
+        new_spec = elaborate(1,0, spec.xs, spec.ys, spec.valids, max_memory);
+        if (new_spec === null) break;
+        spec = new_spec;
+        spec.valids = prune(spec.xs, spec.ys, spec.valids);
         seq += "w";
-        spec = elaborate(1,0, spec.xs, spec.ys, spec.valids);
-        spec.valids = prune(spec.xs, spec.ys, spec.valids);
+        console.log([ seq, spec.xs.length, spec.valids.length ]);
         
-        if (spec.valids.length >= n_stop) break
-        seq += "h";
-        spec = elaborate(0,1, spec.xs, spec.ys, spec.valids);
+        new_spec = elaborate(0,1, spec.xs, spec.ys, spec.valids, max_memory);
+        if (new_spec === null) break;
+        spec = new_spec;
         spec.valids = prune(spec.xs, spec.ys, spec.valids);
+        seq += "h";
+        console.log([ seq, spec.xs.length, spec.valids.length ]);
     }
     
     console.log([ seq, spec.xs.length, spec.valids.length ]);
