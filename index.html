@@ -14,12 +14,17 @@ body { font-family: sans-serif; margin: 1em 1em 1em 1em; }
 table { border-collapse: collapse; }
 td { 
     text-align: center; 
-    margin: 0; padding: 0; padding-right: 1em; 
+    margin: 0; padding: 0; padding-right: 0.5em; 
     vertical-align: top;
 }
 
 input[type=radio] {
     width: 1.5em;
+    height: 1.5em;
+}
+
+input[type=color] {
+    width: 3em;
     height: 1.5em;
 }
 
@@ -38,18 +43,28 @@ input[type=radio] {
             <td><input type=color id=pal0 onchange="redraw()"></td>
             <td><input type=color id=pal1 onchange="redraw()"></td>
             <td><input type=color id=pal2 onchange="redraw()"></td>
+            <td><input type=color id=pal3 onchange="redraw()"></td>
+            <td><input type=color id=pal4 onchange="redraw()"></td>            
             <td>Clear</td>
           </tr>
           <tr>
             <td><input type=radio id=pal_select0 name=pal_select value=0 checked></td>
             <td><input type=radio id=pal_select1 name=pal_select value=1></td>
             <td><input type=radio id=pal_select2 name=pal_select value=2></td>
+            <td><input type=radio id=pal_select3 name=pal_select value=3></td>
+            <td><input type=radio id=pal_select4 name=pal_select value=4></td>
             <td><input type=radio id=pal_select_ name=pal_select value=_></td>
           </tr>
         </table>
       </div>
-      <div class=item>Pattern</div>
-      <div class=item><canvas id=pattern width=60 height=60 class=clicky></canvas></div>
+      <div class=item>
+          Pattern
+          <button onclick="enlarge_pattern()" title="enlarge pattern area">+</button>
+      </div>
+      <div class=item>
+          <canvas id=pattern width=60 height=60 class=clicky></canvas>
+          
+      </div>
       <div class=item>Masks</div>
       <div class=item>
           <canvas id=mask0 width=60 height=60 class=clicky></canvas>
@@ -79,7 +94,7 @@ input[type=radio] {
       </div>
     </div>
     
-    <div id=status style="border: 1px solid #ddd; background: #f8f8f8; padding: 0.5em;"></div>
+    <div id=status style="width: 20em; border: 1px solid #ddd; background: #f8f8f8; padding: 0.5em;"></div>
 </div>
 
 <div style="float: left; margin-top: 1em;">
@@ -119,7 +134,7 @@ let which = 0;
 let param = { };
 
 let pattern = new Click_map(
-    "pattern", null, "_012", null, null, 
+    "pattern", null, "_01234", null, null, 
     ()=>document.querySelector('input[name="pal_select"]:checked').value
 );
 let mask0 = new Click_map(
@@ -155,8 +170,10 @@ function read_url() {
     get("pal0").value = sp_get_str(sp, "pal0", "#e2d810");
     get("pal1").value = sp_get_str(sp, "pal1", "#d9138a");
     get("pal2").value = sp_get_str(sp, "pal2", "#12a4d9");
+    get("pal3").value = sp_get_str(sp, "pal3", "#000000");
+    get("pal4").value = sp_get_str(sp, "pal4", "#ffffff");
     
-    pattern.pic = sp_get_picture(sp, "pattern", new Picture(20,10,"_"));
+    pattern.pic = sp_get_picture(sp, "pattern", new Picture(5,5,"_"));
     mask0.pic = sp_get_picture(sp, "mask0", new Picture(5,5,"0"));
     mask1.pic = sp_get_picture(sp, "mask1", new Picture(5,5,"0"));
     mask2.pic = sp_get_picture(sp, "mask2", new Picture(5,5,"0"));
@@ -169,13 +186,15 @@ function update_url() {
     sp.set("height",param.height);
     sp.set("effort",param.effort);
     sp.set("scale",param.scale);
-    sp.set("pattern",pattern.pic.get_string());
+    sp.set("pattern",pattern.pic.get_trim().get_string());
     sp.set("mask0",mask0.pic.get_string());
     sp.set("mask1",mask1.pic.get_string());
     sp.set("mask2",mask2.pic.get_string());
     sp.set("pal0",param.palette["0"]);
     sp.set("pal1",param.palette["1"]);
     sp.set("pal2",param.palette["2"]);
+    sp.set("pal3",param.palette["3"]);
+    sp.set("pal4",param.palette["4"]);
     
     let url = new URL(location.href);
     url.search = sp;
@@ -193,6 +212,8 @@ function load_param() {
         "0": get("pal0").value,
         "1": get("pal1").value,
         "2": get("pal2").value,
+        "3": get("pal3").value,
+        "4": get("pal4").value,
     };
 }
 
@@ -207,19 +228,33 @@ function on_plot_mousedown() {
     setTimeout(ticker);
 }
 
+function enlarge_pattern() {
+    let pic = pattern.pic;
+    pattern.pic = new Picture(pic.width+2, pic.height+2, "_");
+    for(let y of range(pic.height))
+    for(let x of range(pic.width))
+        pattern.pic.set(x+1,y+1, pic.get(x,y));
+    
+    redraw();
+}
+
 function redraw() {
     load_param();
     update_url();
     
     let status = "";
     if (result !== null && result.finished && result.words.length == 0)
-        status = `Failed to find a layout`;
+        status = `Failed to find a layout.`;
     else if (result !== null && result.finished)
-        status = `Success`;
+        status = `Success.`;
     else if (result !== null)
-        status = `Running`;
+        status = `Running...`;
     else if (worker !== null && !ready)
-        status = `Running`;
+        status = `Running...`;
+        
+    if (result !== null)
+        status += "<br><br>"+result.comment;
+    
     document.getElementById("status").innerHTML = `${status}`;
     
     pattern.palette = {"_":"#cccccc", ...param.palette};

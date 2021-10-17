@@ -33,6 +33,25 @@ class Picture {
         return new Picture(this.height, this.width, new_word);
     }
     
+    get_trim_top() {
+        let y = 0;
+        outer: while(y < this.height) {
+            for(let x of range(this.width))
+            if (this.get(x,y) != "_")
+                break outer;
+            y++;
+        }
+        
+        return new Picture(this.width, this.height-y, this.word.slice(y*this.width, this.height*this.width));
+    }
+    
+    get_trim() {
+        let result = this;
+        for(let i of range(4))
+            result = result.get_trim_top().get_rot();
+        return result;
+    }
+    
     get_string() {
         return `${this.width}|${this.height}|${this.word}`;
     }

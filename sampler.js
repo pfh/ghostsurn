@@ -632,15 +632,14 @@ function prune(xs, ys, valids) {
     for(let j of range(xs.length))
     if (i != j) {
         let overlap = [ xs[j]-xs[i], ys[j]-ys[i] ];
+        if (overlap[1]<0 || (overlap[1]==0 && overlap[0]<=0)) continue;
         if (all_overlaps.filter(item=> item[0]==overlap[0] && item[1]==overlap[1]).length) continue;
         all_overlaps.push(overlap);
     }
-
+    
     while(true) { 
         let any = false;
         for(let [x1,y1] of all_overlaps) {
-
-            let new_valids = [ ];
             let must_match0 = [ ];
             let must_match1 = [ ];
             outer: for(let i of range(xs.length)) {
@@ -652,14 +651,16 @@ function prune(xs, ys, valids) {
                 }
             }
             
-            let good_set = new Set(valids.map(valid => get_subword(valid, must_match1)));
-        
-            for(let valid of valids) {
-                let subword = get_subword(valid, must_match0);
-                if (good_set.has(subword))
-                    new_valids.push(valid);
-            }
+            let subwords0 = valids.map(valid => get_subword(valid, must_match0));
+            let subwords1 = valids.map(valid => get_subword(valid, must_match1));
+            let set0 = new Set(subwords0);
+            let set1 = new Set(subwords1);
             
+            let new_valids = [ ];
+            for(let i of range(valids.length))
+            if (set1.has(subwords0[i]) && set0.has(subwords1[i]))
+                new_valids.push(valids[i]);
+                                 
             any = any || (valids.length > new_valids.length);
             valids = new_valids;
         }
@@ -688,6 +689,9 @@ function run_job(width, height, specs, effort) {
         spec = join(spec.xs,spec.ys,spec.valids, specs[i].xs,specs[i].ys,specs[i].valids, Infinity);
         spec.valids = prune(spec.xs, spec.ys, spec.valids);
     }
+    
+    let spec_initial_p = spec.xs.length;
+    let spec_initial_n = spec.valids.length;
 
     let max_memory = 2e6;
     let seq = "";
@@ -697,21 +701,21 @@ function run_job(width, height, specs, effort) {
         if (new_spec === null) break;
         spec = new_spec;
         spec.valids = prune(spec.xs, spec.ys, spec.valids);
-        seq += "w";
-        console.log([ seq, spec.xs.length, spec.valids.length ]);
+        seq += "→";
         
         new_spec = elaborate(0,1, spec.xs, spec.ys, spec.valids, max_memory);
         if (new_spec === null) break;
         spec = new_spec;
         spec.valids = prune(spec.xs, spec.ys, spec.valids);
-        seq += "h";
-        console.log([ seq, spec.xs.length, spec.valids.length ]);
+        seq += "↓";
     }
-    
-    console.log([ seq, spec.xs.length, spec.valids.length ]);
+
+    //spec.valids = prune(spec.xs, spec.ys, spec.valids);
+        
+    let comment = `Initial ${spec_initial_p}:${spec_initial_n} patterns expanded to ${spec.xs.length}:${spec.valids.length} (${seq}).`;
     
     let validity = new Validity_pat(width, height, spec.xs,spec.ys,spec.valids);
 
-    let result = validity.sample(effort, result => self.postMessage(result));        
-    self.postMessage(result);
+    let result = validity.sample(effort, result => self.postMessage({...result, comment}));        
+    self.postMessage({...result, comment});
 }
