@@ -535,6 +535,8 @@ function make_stack(thick_width, thick_height, width, height, xs, ys, valids) {
     return new Validity_higher( (...p) => make_stack(thick_width, thick_height-1, ...p), width, height, xs, ys, valids )
 }
 
+
+/* Perform an inner join on two sets of patterns, using their overlapping positions. */
 function join(x0s, y0s, valid0s, x1s, y1s, valid1s, max_memory) {    
     let new_xs = x0s.slice();
     let new_ys = y0s.slice();
@@ -580,51 +582,16 @@ function join(x0s, y0s, valid0s, x1s, y1s, valid1s, max_memory) {
     return {xs:new_xs, ys:new_ys, valids:new_valids};
 }
 
+
+/* Join a set of patterns to an offset version of itself. */
 function elaborate(x1, y1, xs, ys, valids, max_memory) {
     let x1s = xs.map(x => x+x1);
     let y1s = ys.map(y => y+y1);
     return join(xs,ys,valids, x1s,y1s,valids, max_memory);
-
-//    let new_xs = xs.slice();
-//    let new_ys = ys.slice();
-//    let new_valids = [ ];
-//    let grab1 = [ ];
-//    let must_match0 = [ ];
-//    let must_match1 = [ ];
-//
-//    outer: for(let i of range(xs.length)) {
-//        for(let j of range(xs.length))
-//        if (xs[i]+x1 == xs[j] && ys[i]+y1 == ys[j]) {
-//            must_match0.push(j);
-//            must_match1.push(i);
-//            continue outer;
-//        }
-//        grab1.push(i);
-//        new_xs.push(xs[i]+x1);
-//        new_ys.push(ys[i]+y1);
-//    }
-//    
-//    let subword_valid1 = { };
-//    for(let valid1 of valids) {
-//       let subword = get_subword(valid1, must_match1);
-//       if (!subword_valid1.hasOwnProperty(subword))
-//          subword_valid1[subword] = [ ];
-//        subword_valid1[subword].push(valid1);
-//    }
-//    
-//    for(let valid0 of valids) {
-//        let subword = get_subword(valid0, must_match0);
-//        if (!subword_valid1.hasOwnProperty(subword))
-//            continue;
-//        for(let valid1 of subword_valid1[subword]) {
-//            new_valids.push(valid0 + get_subword(valid1, grab1));
-//        }
-//    }
-//    
-//    return {xs:new_xs, ys:new_ys, valids:new_valids};
 }
 
 
+/* Remove any patterns that can not overlap any other patterns (for all possible offsets). */
 function prune(xs, ys, valids) {
     let all_overlaps = [ ];
 
@@ -671,17 +638,10 @@ function prune(xs, ys, valids) {
     return valids;
 }
 
-function run_job(width, height, specs, effort) {
-    //let best = expand(width, height, xs,ys,words, 100000);
-    //console.log(best);
 
-    //let validity = new Validity_pat(width, height, xs,ys,words);
-    //let validity = new Validity_WFC(width, height, xs,ys,words);
-    //let validity = make_stack(Math.min(width, 0), Math.min(height, 0), width, height, xs,ys,words);
-    
-    if (specs.length == 0) specs = {xs:[], ys:[], valids:[]};
-    
-    //let spec={xs:xs,ys:ys,valids:words};
+function run_job(width, height, specs, effort) {
+    if (specs.length == 0) 
+        specs = [{xs:[], ys:[], valids:[]}];
     
     let spec = specs[0];
     spec.valids = prune(spec.xs, spec.ys, spec.valids);
