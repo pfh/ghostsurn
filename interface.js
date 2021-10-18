@@ -71,9 +71,13 @@ function string_to_picture(str) {
     return new Picture(width, height, word);
 }
 
+function parse_int(str) {
+    let x = Math.floor(parseFloat(str));
+    return x;
+}
 
 function sp_get_int(sp, field, default_value) {
-    let result = parseInt(sp.get(field));
+    let result = parse_int(sp.get(field));
     if (!Number.isInteger(result))
         result = default_value;
     return result;
@@ -102,6 +106,7 @@ function sp_get_picture(sp, field, default_value) {
         return default_value;
     return result;
 }
+
 
 class Click_map {
     constructor(id, pic, choices, palette, onchange, color_get) {

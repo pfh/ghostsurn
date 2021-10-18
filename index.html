@@ -28,6 +28,10 @@ input[type=color] {
     height: 1.5em;
 }
 
+button {
+    min-width: 1.5em;
+}
+
 </style>
 
 </style>
@@ -76,13 +80,35 @@ input[type=color] {
         </select>
       </div>
       <div class=item>Width</div>
-      <div class=item><input type=number id=width min=1 oninput="recompute()"></div>
+      <div class=item>
+        <button onclick="inc_small('width'); recompute();">+</button>
+        <button onclick="dec_small('width'); recompute();">-</button>
+        <input id=width oninput="recompute()">
+      </div>
       <div class=item>Height</div>
-      <div class=item><input type=number id=height min=1 oninput="recompute()"></div>    
+      <div class=item>
+        <button onclick="inc_small('height'); recompute();">+</button>
+        <button onclick="dec_small('height'); recompute();">-</button>
+        <input id=height oninput="recompute()">
+      </div>    
+      <div class=item>Expansion</div>
+      <div class=item>
+        <button onclick="inc_big('max_memory'); recompute();">+</button>
+        <button onclick="dec_big('max_memory'); recompute();">-</button>
+        <input id=max_memory oninput="recompute()">
+      </div>
       <div class=item>Effort</div>
-      <div class=item><input type=number id=effort min=1 oninput="recompute()"></div>
+      <div class=item>
+        <button onclick="inc_big('effort'); recompute();">+</button>
+        <button onclick="dec_big('effort'); recompute();">-</button>
+        <input id=effort oninput="recompute()">
+      </div>
       <div class=item>Scale</div>
-      <div class=item><input type=number id=scale min=1 max=100 oninput="redraw()"></div>
+      <div class=item>
+        <button onclick="inc_small('scale'); redraw();">+</button>
+        <button onclick="dec_small('scale'); redraw();">-</button>
+        <input id=scale oninput="redraw()">
+      </div>
       <div class=item></div>
       <div class=item>
         <button id=again onclick="recompute()" title="draw a new sample">Again</button>
@@ -93,7 +119,7 @@ input[type=color] {
     <div id=status style="width: 20em; border: 1px solid #ddd; background: #f8f8f8; padding: 0.5em;"></div>
 </div>
 
-<div style="float: left; margin-top: 1em;">
+<div style="float: left; margin-top: 1em; margin-bottom: 1em;">
   <canvas id=plot onmousedown="on_plot_mousedown()"></canvas>
 </div>
 
@@ -109,7 +135,13 @@ This app aims to produce a layout drawn uniformly at random from the set of all 
 <p>
 To assess the quality of the resulting layout, click and hold on the layout. If it flickers between many different layouts, especially at the top, it is a decent random sample. If it doesn't then the layout might not be a good representative of the set of all valid layouts and "effort" should be increased.
 </p>
-  
+
+<p>
+<b>Expansion</b> = Expand the mask used to validate the layout at each step until up to this amount of memory (bytes) is used. Larger values may let ghostsurn lay out harder patterns. Quality around the edges will also be increased.
+</p>
+<p>
+<b>Effort</b> = Size of sample pool to use. Larger values produce a better random draw, and may also let ghostsurn lay out harder patterns.
+</p>  
 <script src=sampler.js></script>
 <script src=interface.js></script>
 <script src=examples.js></script>
@@ -118,6 +150,44 @@ To assess the quality of the resulting layout, click and hold on the layout. If 
 "use strict";
 
 let get = (id) => document.getElementById(id);
+
+function inc(id, steps) {
+    let el = get(id);
+    let x = parse_int(el.value);
+    let y = 1;
+    while(y <= x) y *= 10;
+    y /= 10;
+    
+    for(let f of steps)
+    if (y*f > x) {
+        x = Math.ceil(y*f);
+        break;
+    }
+
+    el.value = x;
+}
+
+function dec(id, steps) {
+    let el = get(id);
+    let x = parse_int(el.value);
+    let y = 1;
+    while(y < x) y *= 10;
+    y /= 10;
+    
+    for(let f of steps)
+    if (y*f < x) {
+        x = Math.floor(y*f);
+        break;
+    }
+    
+    el.value = Math.max(1,x);
+}
+
+function inc_big(id) { inc(id,[1,2.5,5,10]); }
+function inc_small(id) { inc(id,[1,1.5,2,3,4,6,8,10]); }
+function dec_big(id) { dec(id,[10,5,2.5,1]); }
+function dec_small(id) { dec(id,[10,8,6,4,3,2,1.5,1]); }
+
 
 let canvas = document.getElementById("plot");
 let ctx = canvas.getContext("2d");
@@ -156,9 +226,10 @@ function read_url() {
     
     sp = new URLSearchParams(sp);
     get("rotation").value = sp_get_str(sp, "rotation", "90");
-    get("width").value = sp_get_int(sp, "width", 20);
-    get("height").value = sp_get_int(sp, "height", 20);
-    get("effort").value = sp_get_int(sp, "effort", 100);
+    get("width").value = sp_get_int(sp, "width", 30);
+    get("height").value = sp_get_int(sp, "height", 60);
+    get("max_memory").value = sp_get_int(sp, "max_memory", 1e5);
+    get("effort").value = sp_get_int(sp, "effort", 1000);
     get("scale").value = sp_get_int(sp, "scale", 10);
     get("pal0").value = sp_get_str(sp, "pal0", "#e2d810");
     get("pal1").value = sp_get_str(sp, "pal1", "#d9138a");
@@ -175,6 +246,7 @@ function update_url() {
     sp.set("rotation",param.rotation);
     sp.set("width",param.width);
     sp.set("height",param.height);
+    sp.set("max_memory",param.max_memory);
     sp.set("effort",param.effort);
     sp.set("scale",param.scale);
     sp.set("pattern",pattern.pic.get_trim("_").get_string());
@@ -193,10 +265,11 @@ function update_url() {
 
 function load_param() {
     param.rotation = get("rotation").value;
-    param.width = get("width").value;
-    param.height = get("height").value;
-    param.effort = get("effort").value;
-    param.scale = get("scale").value;
+    param.width = parse_int(get("width").value);
+    param.height = parse_int(get("height").value);
+    param.max_memory = parse_int(get("max_memory").value);
+    param.effort = parse_int(get("effort").value);
+    param.scale = parse_int(get("scale").value);
     param.palette = {
         "0": get("pal0").value,
         "1": get("pal1").value,
@@ -336,7 +409,7 @@ function recompute() {
     }
     
     let specs_str = JSON.stringify(specs);
-    let command = `run_job(${param.width}, ${param.height}, ${specs_str}, ${param.effort})`;
+    let command = `run_job(${param.width}, ${param.height}, ${specs_str}, ${param.effort}, ${param.max_memory})`;
     job(command, (msg)=> {
         result = msg;
         if (result.finished)

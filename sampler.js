@@ -639,7 +639,7 @@ function prune(xs, ys, valids) {
 }
 
 
-function run_job(width, height, specs, effort) {
+function run_job(width, height, specs, effort, max_memory) {
     if (specs.length == 0) 
         specs = [{xs:[], ys:[], valids:[]}];
     
@@ -653,7 +653,7 @@ function run_job(width, height, specs, effort) {
     let spec_initial_p = spec.xs.length;
     let spec_initial_n = spec.valids.length;
 
-    let max_memory = 2e6;
+    //let max_memory = 50e6;
     let seq = "";
     let new_spec;
     for(let i of range(4)) {
