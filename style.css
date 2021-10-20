@@ -33,6 +33,7 @@ td {
 input[type=text] {
     width: 8em;
     font-family: monospace;
+    vertical-align: middle;
 }
 
 input[type=radio] {
@@ -43,6 +44,7 @@ input[type=radio] {
 input[type=color] {
     width: 3em;
     height: 1.5em;
+    vertical-align: middle;
 }
 
 button {
