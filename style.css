@@ -1,0 +1,51 @@
+
+body { font-family: sans-serif; margin: 1em 1em 5em 1em; }
+
+.controls { 
+    float: left; 
+    margin-top: 1em; 
+    margin-right: 2em; 
+    margin-bottom: 2em; 
+}
+
+.output {
+    float: left; 
+    margin-top: 1em; 
+    margin-bottom: 1em;
+}
+
+.clicky { border: 1px solid black; }
+
+.grid { display: grid; width: 100%; grid-template-columns: max-content max-content; }
+.item { padding: 0em 1em 1em 0em; }
+
+h1 { margin-top: 0; margin-bottom: 0.25em; }
+
+a { text-decoration: none; }
+
+table { border-collapse: collapse; }
+td { 
+    text-align: center; 
+    margin: 0; padding: 0; padding-right: 0.5em; 
+    vertical-align: top;
+}
+
+input[type=text] {
+    width: 8em;
+    font-family: monospace;
+}
+
+input[type=radio] {
+    width: 1.5em;
+    height: 1.5em;
+}
+
+input[type=color] {
+    width: 3em;
+    height: 1.5em;
+}
+
+button {
+    min-width: 1.5em;
+    text-align: center;
+}

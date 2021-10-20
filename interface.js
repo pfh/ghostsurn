@@ -57,56 +57,6 @@ class Picture {
     }
 }
 
-function string_to_picture(str) {
-    let parts = str.split("|");
-    if (parts.length != 3)
-        return null;
-        
-    let [width,height,word] = parts;
-    width = parseInt(width);
-    height = parseInt(height);
-    if (width * height !== word.length)
-        return null;
-
-    return new Picture(width, height, word);
-}
-
-function parse_int(str) {
-    let x = Math.floor(parseFloat(str));
-    return x;
-}
-
-function sp_get_int(sp, field, default_value) {
-    let result = parse_int(sp.get(field));
-    if (!Number.isInteger(result))
-        result = default_value;
-    return result;
-}
-
-function sp_get_str(sp, field, default_value) {
-    let result = sp.get(field);
-    if (typeof result !== "string")
-        result = default_value;
-    return result;
-}
-
-function sp_get_fixed_str(sp, field, default_value) {
-    let result = sp.get(field);
-    if (typeof result !== "string" || result.length != default_value.length)
-        result = default_value;
-    return result;
-}
-
-function sp_get_picture(sp, field, default_value) {
-    let result = sp.get(field);
-    if (result === null)
-        return default_value;
-    result = string_to_picture(result);
-    if (result === null)
-        return default_value;
-    return result;
-}
-
 
 class Click_map {
     constructor(id, pic, choices, palette, onchange, color_get) {
@@ -191,8 +141,122 @@ class Click_map {
                 this.onchange();            
         }
     }
-
-    //todo: preview color on hover
-    //todo: paint by dragging
 }
 
+
+function string_to_picture(str) {
+    let parts = str.split("|");
+    if (parts.length != 3)
+        return null;
+        
+    let [width,height,word] = parts;
+    width = parseInt(width);
+    height = parseInt(height);
+    if (width * height !== word.length)
+        return null;
+
+    return new Picture(width, height, word);
+}
+
+function parse_int(str) {
+    let x = Math.floor(parseFloat(str));
+    return x;
+}
+
+function sp_get_int(sp, field, default_value) {
+    let result = parse_int(sp.get(field));
+    if (!Number.isInteger(result))
+        result = default_value;
+    return result;
+}
+
+function sp_get_str(sp, field, default_value) {
+    let result = sp.get(field);
+    if (typeof result !== "string")
+        result = default_value;
+    return result;
+}
+
+function sp_get_fixed_str(sp, field, default_value) {
+    let result = sp.get(field);
+    if (typeof result !== "string" || result.length != default_value.length)
+        result = default_value;
+    return result;
+}
+
+function sp_get_picture(sp, field, default_value) {
+    let result = sp.get(field);
+    if (result === null)
+        return default_value;
+    result = string_to_picture(result);
+    if (result === null)
+        return default_value;
+    return result;
+}
+
+
+
+function get(id) {
+    return document.getElementById(id);
+}
+
+function inc(id, steps) {
+    let el = get(id);
+    let x = parse_int(el.value);
+    let y = 1;
+    while(y <= x) y *= 10;
+    y /= 10;
+    
+    for(let f of steps)
+    if (y*f > x) {
+        x = Math.ceil(y*f);
+        break;
+    }
+
+    el.value = x;
+}
+
+function dec(id, steps) {
+    let el = get(id);
+    let x = parse_int(el.value);
+    let y = 1;
+    while(y < x) y *= 10;
+    y /= 10;
+    
+    for(let f of steps)
+    if (y*f < x) {
+        x = Math.floor(y*f);
+        break;
+    }
+    
+    el.value = Math.max(1,x);
+}
+
+function inc_big(id) { inc(id,[1,2.5,5,10]); }
+function inc_small(id) { inc(id,[1,1.5,2,3,4,6,8,10]); }
+function dec_big(id) { dec(id,[10,5,2.5,1]); }
+function dec_small(id) { dec(id,[10,8,6,4,3,2,1.5,1]); }
+
+
+let worker = null;
+let ready = false;
+
+function stop_job() {
+    if (worker !== null) {
+        worker.terminate();
+        worker = null;
+        ready = false;
+    }
+}
+
+function job(command, callback) {
+    if (!ready) {
+        stop_job();
+        worker = new Worker("worker.js");
+        worker.onmessage = function(msg) {
+            callback(msg.data);
+        }
+    }
+    ready = false;
+    worker.postMessage(command);
+}

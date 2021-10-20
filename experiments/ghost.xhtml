@@ -1,0 +1,849 @@
+<?xml version="1.0"?>
+<html xmlns="http://www.w3.org/1999/xhtml"
+xmlns:svg="http://www.w3.org/2000/svg">
+<head>
+<script>
+<![CDATA[
+
+//    Copyright (C) 2006 Paul Harrison
+//    This program is free software; you can redistribute it and/or modify
+//    it under the terms of the GNU General Public License as published by
+//    the Free Software Foundation; either version 2 of the License, or
+//    (at your option) any later version.
+//
+//    This program is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//    GNU General Public License for more details.
+//
+//    You should have received a copy of the GNU General Public License
+//    along with this program; if not, write to the Free Software
+//    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+var svg, width, height;
+
+// Hexagonal connection pattern:
+//
+//     5 6
+//   4 * 1
+//   3 2
+//
+// (all points remain on a square grid, but a regular hexagon pattern
+//  can be formed by a simple linear transformation)
+
+var connections_6 = [ [1,0,3], [0,1,4], [-1,1,5], [-1,0,0], [0,-1,1], [1,-1,2] ], // [ (x, y, index of reverse connection) ]
+    x_mapper_6 = [1.0,0.0],
+    y_mapper_6 = [0.5,Math.sqrt(0.75)];
+
+//    4
+//  3 * 1
+//    2
+var connections_4 = [ [1,0,2], [0,1,3], [-1,0,0], [0,-1,1] ],
+    x_mapper_4 = [1.0,0.0],
+    y_mapper_4 = [0.0,1.0];
+    
+var colors = [ '#8ff', '#f44', '#aaf', '#449', '#ff0088', '#ff4088', '#ff4040', '#ff00ff', '#40c0ff' ];
+
+var connections = connections_6, 
+    x_mapper = x_mapper_6, 
+    y_mapper = y_mapper_6,
+    sides = 6,
+    tile_size = 48.0,
+    positions, // { position_key : true }
+    tile_defs, // [ 'tile', ... ]
+    tile_colors, // { tile : color }
+    tiles, // { position_key : 'tile' }
+    n_tiles,
+    times, // { position_key : clock tick }
+    clock,
+    todo, // { position_key : true }
+    bad_signatures, // { signature : true }
+    bad_signatures_size,
+    option_cache,
+    recently_removed, // { position_key : true }
+    
+    interval_id = null,
+    
+    n_to_remove, where_to_remove,
+    
+    randomizing;
+    
+var tile_node_cache, 
+    draw_tiles_colored,
+    draw_tiles_knotted;
+    
+//General utility
+function list_contains(list, value) { return !list.every(function(x) { return x != value; }); }
+function random_int(n) { return Math.floor(Math.random()*n); }
+function random_choice(list) { return list[random_int(list.length)]; }
+function replace_all(string, from, to) {
+    var old_string=string, new_string;
+    while(true) {
+        new_string = old_string.replace(from, to);
+        if (new_string == old_string) return new_string;
+        old_string = new_string;
+    }
+}
+
+//Point [x,y] operations
+function add(a,b) { return [a[0]+b[0],a[1]+b[1]]; }
+function sub(a,b) { return [a[0]-b[0],a[1]-b[1]]; }
+function scale(point, factor) { return [point[0]*factor, point[1]*factor]; }
+function left90(point) { return [point[1], -point[0]]; }
+function length(point) { return Math.sqrt(point[0]*point[0]+point[1]*point[1]); }
+function render(point) { return point[0] + " " + point[1]; }
+
+//Position [x,y] operations
+function transform(position) { return scale(add(scale(x_mapper,position[0]),scale(y_mapper,position[1])),tile_size); }
+function to_key(position) { return ((position[0]+0x4000)<<15)+(position[1]+0x4000); }
+function from_key(key) { return [(key>>15)-0x4000, (key&0x7fff)-0x4000]; }
+
+function signature() {
+    var list = [];
+    for(var key in tiles) {
+        list.push(key);
+    }
+    list.sort();
+    
+    var n = list.length;
+    for(var i=0;i<n;i++)
+        list.push(tiles[list[i]]);
+    
+    return list.join(';')
+}
+
+function is_valid_todo(position) {
+    for(var i=0;i<sides;i++) {
+       var neighbour = tiles[to_key(add(position, connections[i]))];
+       if (neighbour != null && neighbour[connections[i][2]] != ' ')
+           return true;
+    }
+    
+    return false;
+}
+
+function options(position) {
+    var key = to_key(position);
+    if (option_cache[key] != null) return option_cache[key];
+    
+    var pattern = '^';
+    for(var i=0;i<sides;i++) {
+       var neighbour = tiles[to_key(add(position, connections[i]))];
+       if (neighbour == null)
+           pattern += '.';
+       else switch(neighbour[connections[i][2]]) {
+           case 'A': pattern += 'a'; break;
+           case 'a': pattern += 'A'; break;
+           case 'B': pattern += 'b'; break;
+           case 'b': pattern += 'B'; break;
+           case 'C': pattern += 'c'; break;
+           case 'c': pattern += 'C'; break;
+           case 'D': pattern += 'd'; break;
+           case 'd': pattern += 'D'; break;
+           default:
+               pattern += neighbour[connections[i][2]];
+       }
+    }
+    pattern += '$';
+    regexp = new RegExp(pattern);
+        
+    option_cache[key] = tile_defs.filter(function(x) { return regexp.test(x); });
+    return option_cache[key];
+}
+
+function put(position, tile) {
+    var key = to_key(position);
+       
+    draw(position, tile);
+        
+    for(var i=0;i<sides;i++) {
+        var n_position = add(position, connections[i]);
+        var n_key = to_key(n_position);
+        if (tile[i] != ' ') {
+            if (tiles[n_key] == null && is_visible(n_position))
+                todo[n_key] = true;
+        }
+        if (option_cache[n_key] != null)
+            delete option_cache[n_key];
+    }
+    
+    tiles[key] = tile;
+    times[key] = clock;
+    delete todo[key];
+    clock += 1;
+    n_tiles += 1;
+}
+
+function remove(position) {
+    var key = to_key(position);
+
+    delete tiles[key];
+    n_tiles -= 1;
+    todo[key] = true;
+    recently_removed[key] = true;
+    
+    svg.removeChild(document.getElementById(key));
+    
+    for(var i=0;i<sides;i++) {
+        var n_position = add(position, connections[i]);
+        var n_key = to_key(n_position);
+        if (todo[n_key] && !is_valid_todo(n_position))
+            delete todo[n_key];
+        if (option_cache[n_key])
+            delete option_cache[n_key];
+    }
+}
+
+function can_remove(position) {
+    var key = to_key(position);
+    if (tiles[key] == null) return false;
+    
+    for(var i=0;i<sides;i++) {
+        var n_position = add(position,connections[i]);
+        var n_key = to_key(n_position);
+        
+        if (tiles[n_key] != null && times[n_key] > times[key])
+            return false;
+
+        /* Less strict alternative but still correct alternative, 
+           not used because leads to bad behaviour:
+        
+        if (tiles[key][i] != ' ' && tiles[n_key] != null && times[n_key] > times[key]) {
+            var n_older = 0;
+            for(var j=0;j<sides;j++) {
+                var n_key2 = to_key(add(n_position,connections[j]));
+                if (tiles[n_key][j] != ' ' && tiles[n_key2] != null && times[n_key2] < times[n_key])
+                    n_older += 1;
+            }
+            if (n_older < 2) return false;
+        } */
+    }
+    
+    return true;
+}
+
+function remove_near(position) {
+    var queue = [ to_key(position) ];
+    var queued = {};
+    for(var i=0;i<queue.length;i++) {
+        var position2 = from_key(queue[i]);
+        if (can_remove(position2)) {
+            remove(position2);
+            return;
+        }
+        
+        var start = random_int(sides),
+            j = start;
+        while(true) {
+            var n_position = add(position2,connections[j]);
+            var n_key = to_key(n_position);
+            if (!queued[n_key] && (recently_removed[n_key] || tiles[n_key] != null)) {
+                queue.push(n_key);
+                queued[n_key] = true;
+            }
+                
+            j = (j+1)%sides;
+            if (j == start) break;
+        }
+    }
+}
+
+function make_shape(tile, thickness) {
+    var connectors = [ ];
+    for(var i=0;i<sides;i++) {
+        if (tile[i] == ' ' || tile[i] == '-') continue;
+
+        var out = transform([connections[i][0]*0.5, connections[i][1]*0.5]);
+        var left = left90(out);
+        
+        var pokiness, edge_width, curviness;
+        
+        if (tile[i] == 'A' || tile[i] == 'B' || tile[i] == 'C' || tile[i] == 'D')
+            pokiness = 0.15;
+        else if (tile[i] == 'a' || tile[i] == 'b' || tile[i] == 'c' || tile[i] == 'd')
+            pokiness = -0.15;
+        else 
+            pokiness = 0.0;
+            
+        if (tile[i] == 'A' || tile[i] == 'a' || tile[i] == '1')
+            edge_width = 0.4;
+        else if (tile[i] == 'B' || tile[i] == 'b' || tile[i] == '2')
+            edge_width = 0.3;
+        else if (tile[i] == 'C' || tile[i] == 'c' || tile[i] == '3')
+            edge_width = 0.225;
+        else
+            edge_width = 0.15;
+    
+        var a = add(out,scale(left,edge_width));
+        var b = scale(out,1.0 + pokiness);
+        var c = add(out,scale(left,-edge_width));
+        
+        var a_shrunk = add(scale(a,thickness),scale(b,1.0-thickness));
+        var c_shrunk = add(scale(c,thickness),scale(b,1.0-thickness));
+            
+        connectors.push([ a,b,c, out, a_shrunk,c_shrunk ]);
+    }
+    
+    if (connectors.length == 1) {
+        var point = scale(connectors[0][3], -0.3);
+        var out = scale(left90(connectors[0][3]), 1.25);
+        connectors.push([ point,point,point, out, point,point ]);
+        out = scale(out, -1.0);
+        connectors.push([ point,point,point, out, point,point ]);
+    }
+    
+    var last = connectors[connectors.length-1];
+    var d = 'M ' + render(last[5]);
+    for(var i=0;i<connectors.length;i++) {
+        var scaler = length(sub(connectors[i][0],last[2])) / tile_size;
+        //if (connectors.length == 1) scaler *= 3;
+        
+        d += ' C ' + render(sub(last[5],scale(last[3],scaler))) + 
+               ' ' + render(sub(connectors[i][4],scale(connectors[i][3],scaler))) + 
+               ' ' + render(connectors[i][4]) +
+             ' L ' + render(connectors[i][1]) +
+             ' L ' + render(connectors[i][5]);
+        last = connectors[i];
+    }
+    d += ' z';
+    
+    var element = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    element.setAttributeNS(null, 'd', d);
+    return element;
+}
+
+function make_tile_node(tile) {
+    var element = make_shape(tile, 1.0);
+    
+    element.setAttributeNS(null, 'fill', draw_tiles_colored ? tile_colors[tile] : 'black');
+    if (draw_tiles_colored) {
+        element.setAttributeNS(null, 'stroke', 'black');
+        element.setAttributeNS(null, 'stroke-width', '1');
+    }    
+    
+    return element;
+}
+
+function make_knotted_tile_node(tile) {
+    var element = document.createElementNS('http://www.w3.org/2000/svg', 'g'); 
+    var sub_element;
+    
+    var n=0;
+    for(var i=0;i<sides;i++) 
+        if (tile[i] != ' ' && tile[i] != '-') n += 1;
+    
+    var sub_tiles;
+    if (n < 4) {
+        sub_tiles = [ tile ];
+    } else {
+        sub_tiles = [ tile, tile, tile ];
+        for(var i=0;i<sides;i++) {
+            if (tile[i] != 'a' && tile[i] != 'b' && tile[i] != 'c' && tile[i] != 'd') 
+                sub_tiles[0] = sub_tiles[0].slice(0,i) + ' ' + sub_tiles[0].slice(i+1);
+            if (tile[i] != 'A' && tile[i] != 'B' && tile[i] != 'C' && tile[i] != 'D') 
+                sub_tiles[1] = sub_tiles[1].slice(0,i) + ' ' + sub_tiles[1].slice(i+1);
+            if (tile[i] != '1' && tile[i] != '2' && tile[i] != '3' && tile[i] != '4') 
+                sub_tiles[2] = sub_tiles[2].slice(0,i) + ' ' + sub_tiles[2].slice(i+1);
+        }
+    }
+    
+    for(var i=0;i<sub_tiles.length;i++) 
+        if (sub_tiles[i] != '      ' && sub_tiles[i] != '    ') {
+            sub_element = make_shape(sub_tiles[i], 1.2);
+            sub_element.setAttributeNS(null, 'fill', 'black');
+            element.appendChild(sub_element);
+            
+            sub_element = make_shape(sub_tiles[i], 0.8);
+            sub_element.setAttributeNS(null, 'fill', draw_tiles_colored ? tile_colors[tile] : '#fdc');
+            sub_element.setAttributeNS(null, 'stroke', draw_tiles_colored ? tile_colors[tile] : '#fdc');
+            sub_element.setAttributeNS(null, 'stroke-width', '1');
+            element.appendChild(sub_element);
+        }
+    
+    return element
+}
+
+function get_tile_node(tile) {
+    if (tile_node_cache[tile] != null) 
+        return tile_node_cache[tile];
+    
+    var element = draw_tiles_knotted ? make_knotted_tile_node(tile) : make_tile_node(tile);
+    tile_node_cache[tile] = element;
+    return element;
+}
+
+function draw(position, tile) {
+    var element = get_tile_node(tile).cloneNode(true);    
+    var translation = transform(position);
+    element.setAttributeNS(null, 'id', to_key(position));
+    element.setAttributeNS(null, 'transform', 'translate('+(translation[0]+width/2)+','+(translation[1]+height/2)+')');
+    svg.appendChild(element);    
+}
+
+function is_visible(position) {
+    var point = transform(position);
+    var allowance = tile_size;
+    return point[0] >= -width/2-allowance && point[0] <= width/2+allowance &&
+           point[1] >= -height/2-allowance && point[1] <= height/2+allowance;
+}
+
+function iterate() {
+    if (n_tiles >= 10) randomizing = false;
+
+    if (randomizing && clock > 1000) {        
+        stop();
+        randomize();
+        return;
+    }
+
+    for(var i=0;i<16;i++) {
+        if (n_to_remove) {
+            remove_near(where_to_remove);
+            n_to_remove -= 1;
+            continue;
+        }
+    
+        var key = null;
+        var key_score = 1e30;
+        for(key2 in todo) {
+            var position2 = from_key(key2);        
+            var key2_score = length(transform(position2));
+            
+            if (options(position2).length < 2)
+                key2_score -= 65536;
+            
+            if (key2_score < key_score) {
+                key = key2;
+                key_score = key2_score;
+            }
+        }
+        
+        if (key == null) {
+            stop();
+            if (randomizing) randomize();
+            return;
+        }
+                
+        var position = from_key(key);
+        var option_list = options(position);
+        for(var j=0;j<option_list.length;j++) {
+            var k = random_int(option_list.length),
+                temp = option_list[k];
+            option_list[k] = option_list[j];
+            option_list[j] = temp;
+        }
+        
+        var j=0;
+        while(j < option_list.length) {
+            put(position, option_list[j]);
+            
+            if (!bad_signatures[signature()]) break;
+            
+            remove(position);
+            j += 1;
+        }
+        
+        if (j == option_list.length) {
+            if (n_tiles == 1) {
+                stop();
+                if (randomizing) randomize();
+                return;
+            }
+        
+            if (bad_signatures_size >= 1024) {
+                bad_signatures = {};
+                bad_signatures_size = 0;
+            }
+            bad_signatures[signature()] = true;
+            bad_signatures_size += 1;
+        
+            n_to_remove = 1;
+            while(Math.random() < 1.0/4) n_to_remove *= 2;
+            if (n_to_remove >= n_tiles) n_to_remove = n_tiles-1;
+                
+            where_to_remove = position;
+            recently_removed = {};
+        }
+    }
+}
+
+function redraw() {
+    tile_node_cache = {};
+    draw_tiles_colored = document.getElementById("colored").checked;
+    draw_tiles_knotted = document.getElementById("knotted").checked;
+
+    svg.textContent = '';
+    
+    for(key in tiles) draw(from_key(key), tiles[key]);
+}
+
+function make_url(base_tiles) {
+    return document.URL.split('?')[0].split('#')[0] + '?' + replace_all(base_tiles.join('&amp;'),' ','+');
+}
+
+function init() {
+    stop();
+
+    svg = document.getElementById('svg-outer');
+    
+    var size = Math.max(300, Math.min(window.innerWidth*0.8,window.innerHeight - 50));
+    svg.setAttributeNS(null,'width',size);
+    svg.setAttributeNS(null,'height',size);
+    
+    
+    width = parseInt( svg.getAttributeNS(null,'width') );
+    height = parseInt( svg.getAttributeNS(null,'height') );    
+    svg = document.getElementById('svg');
+
+    tiles = {};
+    n_tiles = 0;
+    positions = {};
+    tile_defs = [];
+    tile_colors = {};
+    times = {};
+    clock = 0;
+    todo = {};
+    bad_signatures = {};
+    bad_signatures_size = 0;
+    option_cache = {};
+    recently_removed = {};
+    n_to_remove = 0;
+    randomizing = false;
+
+    redraw();    
+    
+    todo[to_key([0,0])] = true;
+    
+    var base_tiles = eval('['+document.getElementById('textfield').value+']');
+    
+    if (base_tiles[0].length == 6) {
+        sides = 6;
+        connections = connections_6;
+        x_mapper = x_mapper_6;
+        y_mapper = y_mapper_6;
+    } else if (base_tiles[0].length == 4) {
+        sides = 4;
+        connections = connections_4;
+        x_mapper = x_mapper_4;
+        y_mapper = y_mapper_4;
+    } else return;
+    
+    if (!base_tiles.every(function(x) { return x.length == sides; })) return;
+    
+    document.getElementById('urlarea').innerHTML = '<a href="' + make_url(base_tiles) + '">[ Link to this diagram ]</a>';
+    
+    for(var i=0;i<base_tiles.length;i++) {
+        var tile = base_tiles[i];
+        while(!list_contains(tile_defs, tile)) {
+            tile_defs.push(tile);
+            tile_colors[tile] = colors[i%colors.length];
+            tile = tile.substring(1) + tile[0];
+        }
+    }
+    
+    put([0,0], tile_defs[0]);
+    
+    interval_id = window.setInterval("iterate()", 10)
+}
+
+function stop() {
+    if (interval_id != null) {
+        window.clearInterval(interval_id);
+        interval_id = null;
+    }
+}
+
+function normalize(tile) {
+    var best = tile;
+    for(var i=1;i<tile.length;i++) {
+        tile = tile.substring(1) + tile[0];
+        if (tile > best) best = tile;
+    }
+    return best;
+}
+
+function randomize() {
+    var sides = draw_tiles_knotted ? 6 : random_choice([4,6]);
+    
+    var palette = '';
+    var blank = random_choice([' ',' ','-']);
+    for(var i=1;i<sides;i++) blank += blank[0];
+
+    var n = 2;
+    while(Math.random() < 0.4) n += 1;
+    
+    var palette_size = 0;
+    while(true) {
+        palette += random_choice(['Aa', 'Bb', 'Cc', 'Dd', 'Aa', 'Bb', 'Cc', 'Dd', 'Aa', 'Bb', 'Cc', 'Dd', '1', '2', '3', '4']);
+        //palette += blank[0]+blank[0];
+        palette_size += 1;
+        if (Math.random() < 0.125) break;
+//        if (Math.random() < 0.25 || palette_size >= n*2) break;
+    }
+    
+    for(var i=random_int(palette_size)*3;i>=0;i-=1) palette += blank[0];
+    
+    var n_iter = 0;    
+
+    while(true) {    
+        n_iter += 1;
+        
+        var result = [ ];
+        for(var i=0;i<n;i++) {
+            while(true) {
+                var tile = '';
+                for(var j=0;j<sides;j++)
+                    tile += random_choice(palette);
+                
+                if (tile == blank) continue;
+                
+                /*function test_knotiness(chars) {
+                    var n = 0;
+                    for(var i=0;i<sides;i++)
+                        if (chars.search(tile[i]) != -1)
+                            n += 1;
+                    return n == 0 || n == 2 || n == 6;
+                }
+                if (draw_tiles_knotted) {
+                    if (!test_knotiness('abcd')) continue;
+                    if (!test_knotiness('ABCD')) continue;
+                    if (!test_knotiness('1234')) continue;
+                }*/
+                
+                tile = normalize(tile);
+                if (list_contains(result, tile)) continue;
+                break;
+            }
+            result.push(tile);
+        }
+        
+        function test_charge(plus,minus) {
+            var any_plus = false, any_minus = false;
+            for(var i=0;i<result.length;i++) {
+                var charge = 0;
+                for(var j=0;j<sides;j++) {
+                    if (result[i][j] == plus) charge += 1;
+                    if (result[i][j] == minus) charge -= 1;
+                }
+                if (charge > 0) any_plus = true;
+                if (charge < 0) any_minus = true;
+            }
+            
+            return any_plus == any_minus;
+        }
+        
+        if (!test_charge('A','a')) continue;
+        if (!test_charge('B','b')) continue;
+        if (!test_charge('C','c')) continue;
+        if (!test_charge('D','d')) continue;
+        
+        if (n_iter >= 16) break;
+                
+        var any_bad = false;
+        for(var i=0;i<palette.length && !any_bad;i++) {
+            if (palette[i] == ' ' || palette[i] == '-') continue;
+        
+            var any = false;
+            for(var j=0;j<n && !any;j++)
+                for(var k=0;k<sides && !any;k++)
+                    if (result[j][k] == palette[i])
+                        any = true;
+            if (!any) any_bad = true;
+        }
+        if (any_bad) continue;
+        
+        break;
+    }
+    
+    document.getElementById('textfield').value = '\'' + result.join('\', \'') + '\'';
+    init();
+    randomizing = true;
+}
+
+function make_saveable() {    
+    var text = '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ev="http://www.w3.org/2001/xml-events">\n';
+    
+    function dump(element) {
+        text += '<' + element.tagName;
+        
+        for(var j=0;j<element.attributes.length;j++)
+            text += ' ' + element.attributes[j].name + '="' + element.attributes[j].value + '"';
+        
+        if (element.hasChildNodes()) {
+            text += '>\n';
+            for(var j=0;j<element.childNodes.length;j++)
+                dump(element.childNodes[j]);
+            text += '</' + element.tagName + '>\n';
+        } else {
+            text += '/>\n';
+        }
+    }
+    
+    for(var i=0;i<svg.childNodes.length;i++)
+        dump(svg.childNodes[i]);
+    
+    text += '</svg>';
+    
+    document.getElementById("download").href = "data:image/svg+xml;base64," + btoa(text)
+    return false;
+}
+
+
+var presets = [
+    "' a A a', '    A '",
+    "'CcCc  '",
+    "'  33Aa', ' 33 Aa'",
+    "'ab A  ', 'B  C  ', 'B  c  ', 'B  D  ', 'B  d  '",
+    "'d D 4 ', 'd  D  ', '44    '",
+    "'a  A 4', 'aA    ', '4     ', '4 4   '",
+    "'a  A 4', 'aA    ', '4     '",
+    "'3-3-2-', '3--2--', '1-----'",
+    "'   bB ', 'bAaB  ', 'aAaA  '",    
+    "'B Aa  ', 'b  Aa '",
+    "'44    ', '11  4 '",
+    "' a  4 ', ' 4 4  ', '  A441'",
+    "'1 1 1 ', '2  12 '",
+    "' AAaa ', 'a  A  '",
+    "' a A  ', 'Aaa  A'",
+    "'a  a  ', ' aAA A'",
+    "'  AA A', 'a a a '",
+    "'a  aa ', '    AA'",
+    "'A A a ', 'a a   '",
+    "'A A a ', 'a  a  '",
+    "' a   4', 'a4 44A', '4A    '",
+    "'a 2a2 ', ' A   A', '     2'",
+    "'141   ', '4  4  ', '1 1   '",
+    "' Aaa  ', 'A1A   ', 'a 1AAa'",
+    "'  bB1 ', ' b  B '",
+    "'BbB 1 ', '     b'",
+    "'b  b b', '  BbB '",
+    "'aA1   ', '   AA ', 'a  2  '",
+    "'212111', ' 1 2  '",
+    "'22222a', '22 A22'",
+    "'2 222 ', '2   B2', '  b  2'",
+    "' a a a', '   A A'",
+    "' Dd cA', '   d D', '   a C'",
+    "'  CCCc', ' 3Ca A', '  3  c', '     c'",
+    "' C dDc', '  CC C', '   ccC'",
+    "' Aa Cc', '     c', '     C'",
+    "' CcDdC', '  cC c', '     C'",
+    "'A 1 1 ','a1   B','b  1  '",
+    "' 44B4D', ' dbB4b', ' 44D d', '    44'",
+    "'  d3 3', '   D D'",
+    "'  cc c', ' C C c'",
+    "'AaAaaa', '  1 Aa', '     A'",
+    "'d D 3 ', 'dD    ', '3     '",
+    "'a 1 A ', 'a  A  '",
+    "'cCCcCC', 'cccC  ', 'c C  C'",
+    "'A44444', 'a4   4', '4 4   '",
+    "'acaACA', 'acbBCB', 'bcaBCB', 'bcbACA'",
+    "'A  ab ', 'B ab  ', 'A  a  ', 'B  b  ', 'ABd  D'",
+    "'bBbBBB', 'bb    ', 'b   B '",
+    "'a AA A', 'a a   '",
+    "'cC a A', 'a A   '",
+    "'bbB  B', 'b BBB ', 'bb    '",
+    "'cCc C ', 'cC c C'",
+    "'d4 Dd ', 'd D   ', 'DD    '",
+    "'aaAA11', '1 1   ', 'a  A  ', 'a    A'",
+    "'cCcC  ', 'c  C  '",
+    "'C22222', 'cC  22', 'cc  2C', '2 2   '",
+    "'b-B-BB', 'b-----'",
+    "'cCc--C', 'cC----', 'c-C---'",
+    "'b 4   ', '3     ', 'B   44', '4  3  '",
+    "'aa A  ', 'c A   ', 'a     ', 'C3    '",
+    "'bBBb  ', 'b BBBB', 'bbbbbB'",
+    "'B B   ', 'bb4 B ', 'B 4   '",
+    "'cCc   ', 'c CC  '",
+    "'b C B ', 'c bC b', 'c  B  '",
+    "'aaAA  ', 'aA a A'",
+    "'bBbB B', 'bB b  '",
+    "'bB 3B ', 'b33   '",
+    "'bbb-b-', 'b-B---', 'B-b---', 'B-----'",
+    
+    "'3 3 ', 'b B3', '3   '",
+    "' 111'",
+    "'abA ', 'B C ', 'B c ', 'B D ', 'B d '",
+    "'4A4a', '  a4', ' A B', '  Ab'",
+    "'acAC', 'adBD', 'bcBD', 'bdAC'",
+    "'1111', '   1'",
+    "' bbb', '  BB'",
+    "'1B1B', 'a A ', ' bA ', 'ab B'",
+    "'cC C', 'cc C'",
+    "'c-C-', 'cC--'",
+    "'dd11', 'D-3-', '11--'",
+    "'3333', '3 1 ', '33  '" 
+];
+
+function setup() {
+    var to_append = '';
+    for(var i=0;i<presets.length;i++) {
+        to_append += '<a style="font-family: monospace; white-space: pre;" onclick="document.getElementById(\'textfield\').value=presets[' + i + ']; init();" href="#">' + presets[i] + '</a><br/>'; 
+    }
+
+    document.getElementById('sidebar').innerHTML += to_append;
+
+    var parameters = document.URL.split('?')[1];
+    if (parameters != null) {
+        parameters = parameters.split('#')[0];
+        parameters = replace_all(parameters, '\'', '')
+        parameters = replace_all(parameters, '"', '')
+        parameters = replace_all(parameters, '\\', '')
+        parameters = replace_all(parameters, '+', ' ')
+        parameters = replace_all(parameters, '&', '\', \'')
+        document.getElementById('textfield').value = '\'' + parameters + '\'';
+    }
+}
+
+]]>
+</script>
+
+<style>
+body { font-family: sans-serif; font-size: 85%; }
+a { text-decoration: none; }
+input { border: solid 1px; border-color: #000; }
+button { border: solid 1px; margin-top: 0.5em; border-color: #000; }
+.outlined { border: solid 1px black; }
+#sidebar { height: 50vh; border: solid 1px #000; overflow-y: auto; }
+</style>
+
+<title>Ghost Diagrams</title>
+
+</head>
+
+<body onload="setup(); init();">
+<table width="100%">
+  <tr>
+    <td width="610" valign="top">
+      <svg:svg width="600px" height="600px" id="svg-outer" class="outlined">
+        <svg:g id="svg"></svg:g>
+        <!-- <svg:rect x="0.5" y="0.5" width="600" height="600" 
+                  fill="none" stroke="#eee" stroke-width="1"/> -->
+      </svg:svg>
+      <br/>
+      <a id="download" href="#" onclick="make_saveable();">[ SVG ]</a>
+      <span id="urlarea"></span>
+    </td>
+
+    <td valign="top">
+      <span style="font-size: 250%;">Ghost Diagrams</span>
+      <a href="http://www.logarithmic.net/pfh/ghost-diagrams">about</a>
+      <br/>
+      <input style="font-family: mono; width: 100%;" id="textfield" value="' a A a', '    A '"/>
+      <br/>
+      <button onclick="init();">restart</button> 
+      <button onclick="stop();">stop</button>
+      <button onclick="randomize();">random</button>
+      <button onclick="tile_size /= 1.1; init()">smaller</button>
+      <button onclick="tile_size *= 1.1; init()">larger</button>
+      <br/><br/>
+      <input type="checkbox" id="colored" checked="checked" onclick="redraw();"/> colored tiles
+      <br/>
+      <input type="checkbox" id="knotted" onclick="redraw();"/> knotwork
+      <br/><br/>
+      <div id="sidebar"></div>
+    </td>
+  </tr>
+</table>
+
+</body>
+</html>

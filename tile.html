@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang=en>
+<meta charset=utf-8>
+<link rel="icon" type="image/png" href="../favicon.png">
+<link rel="stylesheet" href="style.css">
+
+<div style="float: right">
+<a href="https://github.com/pfh/ghostsurn">GitHub &rarr;</a>
+</div>
+
+<h1>ghostsurn 0.1 - tiles</h1>
+
+<div class="controls">
+    <div class=grid>
+        <div class=item>Tiles</div>
+        <div class=item>
+            <input type=text id=tile0 oninput="recompute()"><br>
+            <input type=text id=tile1 oninput="recompute()"><br>
+            <input type=text id=tile2 oninput="recompute()"><br>
+            <input type=text id=tile3 oninput="recompute()">
+        </div>
+        <div class=item></div>
+        <div class=item>
+            <button id=again onclick="recompute()" title="draw a new sample">Again</button>
+        </div>
+      <div class=item>Width</div>
+      <div class=item>
+        <button onclick="inc_small('width'); recompute();">+</button>
+        <button onclick="dec_small('width'); recompute();">-</button>
+        <input type="text" id=width oninput="recompute()">
+      </div>
+      <div class=item>Height</div>
+      <div class=item>
+        <button onclick="inc_small('height'); recompute();">+</button>
+        <button onclick="dec_small('height'); recompute();">-</button>
+        <input type="text" id=height oninput="recompute()">
+      </div>    
+      <div class=item>Expansion</div>
+      <div class=item>
+        <button onclick="inc_big('max_memory'); recompute();">+</button>
+        <button onclick="dec_big('max_memory'); recompute();">-</button>
+        <input type="text" id=max_memory oninput="recompute()">
+      </div>
+      <div class=item>Effort</div>
+      <div class=item>
+        <button onclick="inc_big('effort'); recompute();">+</button>
+        <button onclick="dec_big('effort'); recompute();">-</button>
+        <input type="text" id=effort oninput="recompute()">
+      </div>
+      <div class=item>Scale</div>
+      <div class=item>
+        <button onclick="inc_small('scale'); redraw();">+</button>
+        <button onclick="dec_small('scale'); redraw();">-</button>
+        <input type="text" id=scale oninput="redraw()">
+      </div>
+      <div class=item></div>
+      <div class=item>
+        <button id=again onclick="recompute()" title="draw a new sample">Again</button>
+        <button id=randomize onclick="randomize()" title="apply variable reinforcement to the user">Randomize pattern</button>
+      </div>
+    </div>
+    
+    <div id=status style="width: 23em; border: 1px solid #ddd; background: #f8f8f8; padding: 0.5em; min-height: 5em;"></div>
+</div>
+
+<div class=output>
+  <canvas id=plot onmousedown="on_plot_mousedown()"></canvas>
+</div>
+
+
+<script src=sampler.js></script>
+<script src=interface.js></script>
+<script src=tile.js></script>
+
+<script>
+"use strict";
+
+let canvas = get("plot");
+
+let result = null;
+let which = 0;
+let param = { };
+
+function read_url() {
+    let sp = location.search;
+    //if (sp == "") 
+    //    sp = examples[0][1];
+    
+    sp = new URLSearchParams(sp);
+    get("width").value = sp_get_int(sp, "width", 30);
+    get("height").value = sp_get_int(sp, "height", 60);
+    get("max_memory").value = sp_get_int(sp, "max_memory", 1e5);
+    get("effort").value = sp_get_int(sp, "effort", 1000);
+    get("scale").value = sp_get_int(sp, "scale", 10);
+    
+    get("tile0").value = sp_get_str(sp, "tile0", "");
+    get("tile1").value = sp_get_str(sp, "tile1", "");
+    get("tile2").value = sp_get_str(sp, "tile2", "");
+    get("tile3").value = sp_get_str(sp, "tile3", "");
+}
+
+
+function update_url() {
+    let sp = new URLSearchParams();
+    sp.set("width",param.width);
+    sp.set("height",param.height);
+    sp.set("max_memory",param.max_memory);
+    sp.set("effort",param.effort);
+    sp.set("scale",param.scale);
+    
+    sp.set("tile0",param.tiles[0]);
+    sp.set("tile1",param.tiles[1]);
+    sp.set("tile2",param.tiles[2]);
+    sp.set("tile3",param.tiles[3]);
+    
+    let url = new URL(location.href);
+    url.search = sp;
+    if (url != location.href)
+        history.replaceState(history.state, document.title, url);
+}
+
+
+function load_param() {
+    param.width = parse_int(get("width").value);
+    param.height = parse_int(get("height").value);
+    param.max_memory = parse_int(get("max_memory").value);
+    param.effort = parse_int(get("effort").value);
+    param.scale = parse_int(get("scale").value);
+    param.tiles = [ get("tile0").value, get("tile1").value, get("tile2").value, get("tile3").value ];
+    
+    param.tiles_processed = param.tiles.map(tile => tile.trim()).filter(tile => tile.length>0);
+    param.tiles_spun = spin_tiles(param.tiles_processed);
+}
+
+function redraw() {
+    load_param();
+    update_url();
+    
+    if (result === null || result.words.length == 0) {
+        let ctx = canvas.getContext("2d");
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0,0,canvas.width,canvas.height);
+        return;
+    }
+
+    draw_tile_layout(canvas, result.width, result.height, param.scale, result.words[0], param.tiles_spun);
+}
+
+function recompute() {
+    load_param();
+    
+    let bad = false;
+    result = null;
+    
+    bad = param.tiles_spun.length == 0;
+    bad = bad || (param.tiles_spun.filter(tile => tile.length != param.tiles_spun[0].length).length) 
+    
+    if (bad) {
+        stop_job();
+        redraw();
+        return;
+    }
+    
+    let specs = tile_specs( param.tiles_spun );
+    let specs_str = JSON.stringify(specs);
+    let command = `run_job(${param.width}, ${param.height}, ${specs_str}, ${param.effort}, ${param.max_memory})`;
+    job(command, (msg)=> {
+        result = msg;
+        if (result.finished)
+            ready = true;
+        redraw();
+    });
+    
+    redraw();
+}
+
+read_url();
+recompute();
+
+/*
+let canvas = get("plot");
+let ctx = canvas.getContext("2d");
+
+canvas.width = 500;
+canvas.height = 500;
+ctx.fillStyle = "#000";
+
+let tiles = spin_tiles(["------","AaAa--"]);
+let sample = make_validity(20, 20, tile_specs(tiles), 10000).sample(1000, null);
+
+draw_tile_layout(canvas, sample.width, sample.height, sample.words[0], tiles);
+*/
+//draw_tile(ctx, "Aa11", 0,0);
+
+</script>

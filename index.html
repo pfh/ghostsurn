@@ -2,43 +2,17 @@
 <html lang=en>
 <meta charset=utf-8>
 <link rel="icon" type="image/png" href="favicon.png">
+<link rel="stylesheet" href="style.css">
 
-<style>
-
-body { font-family: sans-serif; margin: 1em 1em 1em 1em; }
-.clicky { border: 1px solid black; }
-
-.grid { display: grid; width: 100%; grid-template-columns: max-content max-content; }
-.item { padding: 0em 1em 1em 0em; }
-
-table { border-collapse: collapse; }
-td { 
-    text-align: center; 
-    margin: 0; padding: 0; padding-right: 0.5em; 
-    vertical-align: top;
-}
-
-input[type=radio] {
-    width: 1.5em;
-    height: 1.5em;
-}
-
-input[type=color] {
-    width: 3em;
-    height: 1.5em;
-}
-
-button {
-    min-width: 1.5em;
-}
-
-</style>
-
-</style>
 <title>ghostsurn</title>
+
+<div style="float: right">
+<a href="https://github.com/pfh/ghostsurn">GitHub &rarr;</a>
+</div>
+
 <h1>ghostsurn 0.1</h1>
 
-<div style="float: left; margin-top: 1em; margin-right: 2em; margin-bottom: 2em;">
+<div class="controls">
     <div class=grid>
       <div class=item>Palette</div>
       <div class=item>
@@ -83,31 +57,31 @@ button {
       <div class=item>
         <button onclick="inc_small('width'); recompute();">+</button>
         <button onclick="dec_small('width'); recompute();">-</button>
-        <input id=width oninput="recompute()">
+        <input type="text" id=width oninput="recompute()">
       </div>
       <div class=item>Height</div>
       <div class=item>
         <button onclick="inc_small('height'); recompute();">+</button>
         <button onclick="dec_small('height'); recompute();">-</button>
-        <input id=height oninput="recompute()">
+        <input type="text" id=height oninput="recompute()">
       </div>    
       <div class=item>Expansion</div>
       <div class=item>
         <button onclick="inc_big('max_memory'); recompute();">+</button>
         <button onclick="dec_big('max_memory'); recompute();">-</button>
-        <input id=max_memory oninput="recompute()">
+        <input type="text" id=max_memory oninput="recompute()">
       </div>
       <div class=item>Effort</div>
       <div class=item>
         <button onclick="inc_big('effort'); recompute();">+</button>
         <button onclick="dec_big('effort'); recompute();">-</button>
-        <input id=effort oninput="recompute()">
+        <input type="text" id=effort oninput="recompute()">
       </div>
       <div class=item>Scale</div>
       <div class=item>
         <button onclick="inc_small('scale'); redraw();">+</button>
         <button onclick="dec_small('scale'); redraw();">-</button>
-        <input id=scale oninput="redraw()">
+        <input type="text" id=scale oninput="redraw()">
       </div>
       <div class=item></div>
       <div class=item>
@@ -116,10 +90,10 @@ button {
       </div>
     </div>
     
-    <div id=status style="width: 20em; border: 1px solid #ddd; background: #f8f8f8; padding: 0.5em;"></div>
+    <div id=status style="width: 23em; border: 1px solid #ddd; background: #f8f8f8; padding: 0.5em; min-height: 5em;"></div>
 </div>
 
-<div style="float: left; margin-top: 1em; margin-bottom: 1em;">
+<div class=output>
   <canvas id=plot onmousedown="on_plot_mousedown()"></canvas>
 </div>
 
@@ -128,8 +102,12 @@ button {
   <div id=examples></div>
 </div>
 
-<p style="clear: left">
+<p style="clear: left;">
 This app aims to produce a layout drawn uniformly at random from the set of all possible valid layouts. The randomness of the draw is not 100% perfect, but perfection can be approached by increasing the "effort" parameter.
+</p>
+
+<p>
+A layout is valid if all the mask-shapes from the layout match at least one location in the pattern. If rotation is enabled, all rotations of the mask-shape in the layout must match something in the pattern or a rotation of the pattern. <small>(Minor detail: layouts that would necessarily be invalid beyond the edge of the visible layout are sometimes excluded as well, as a result of a pruning and expansion preprocessing step for the mask-shapes extracted from the pattern.)</small>
 </p>
 
 <p>
@@ -137,7 +115,7 @@ To assess the quality of the resulting layout, click and hold on the layout. If 
 </p>
 
 <p>
-<b>Expansion</b> = Expand the mask used to validate the layout at each step until up to this amount of memory (bytes) is used. Larger values may let ghostsurn lay out harder patterns. Quality around the edges will also be increased.
+<b>Expansion</b> = Expand the mask used to validate the layout at each step until up to this amount of memory (bytes) is used. Larger values may let ghostsurn lay out harder patterns, may increase quality around the edges, but also may increase the startup time.
 </p>
 <p>
 <b>Effort</b> = Size of sample pool to use. Larger values produce a better random draw, and may also let ghostsurn lay out harder patterns.
@@ -149,53 +127,11 @@ To assess the quality of the resulting layout, click and hold on the layout. If 
 <script>
 "use strict";
 
-let get = (id) => document.getElementById(id);
-
-function inc(id, steps) {
-    let el = get(id);
-    let x = parse_int(el.value);
-    let y = 1;
-    while(y <= x) y *= 10;
-    y /= 10;
-    
-    for(let f of steps)
-    if (y*f > x) {
-        x = Math.ceil(y*f);
-        break;
-    }
-
-    el.value = x;
-}
-
-function dec(id, steps) {
-    let el = get(id);
-    let x = parse_int(el.value);
-    let y = 1;
-    while(y < x) y *= 10;
-    y /= 10;
-    
-    for(let f of steps)
-    if (y*f < x) {
-        x = Math.floor(y*f);
-        break;
-    }
-    
-    el.value = Math.max(1,x);
-}
-
-function inc_big(id) { inc(id,[1,2.5,5,10]); }
-function inc_small(id) { inc(id,[1,1.5,2,3,4,6,8,10]); }
-function dec_big(id) { dec(id,[10,5,2.5,1]); }
-function dec_small(id) { dec(id,[10,8,6,4,3,2,1.5,1]); }
-
-
-let canvas = document.getElementById("plot");
+let canvas = get("plot");
 let ctx = canvas.getContext("2d");
 
-let worker = null;
-let ready = false;
-
 let result = null;
+
 let which = 0;
 let param = { };
 
@@ -206,23 +142,10 @@ let pattern = new Click_map(
 let mask = new Click_map(
     "mask", null, "01", {"0":"#cccccc","1":"black"}, null, null);
 
-
-function job(command, callback) {
-    if (!ready) {
-        if (worker !== null) worker.terminate();
-        worker = new Worker("worker.js");
-        worker.onmessage = function(msg) {
-            callback(msg.data);
-        }
-    }
-    ready = false;
-    worker.postMessage(command);
-}
-
 function read_url() {
     let sp = location.search;
-    //if (sp == "") 
-    //    sp = examples[0][1];
+    if (sp == "") 
+        sp = examples[0][1];
     
     sp = new URLSearchParams(sp);
     get("rotation").value = sp_get_str(sp, "rotation", "90");
@@ -278,6 +201,16 @@ function load_param() {
         "4": get("pal4").value,
     };
 }
+
+
+function set_pal(list) {
+    for(let i of range(list.length))
+        param.palette[""+i] = list[i];
+    update_url();
+    read_url();
+    redraw();
+}
+
 
 function on_plot_mousedown() {
     function ticker() {
