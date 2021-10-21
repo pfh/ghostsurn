@@ -39,7 +39,7 @@ let examples = [
 ];
 
 
-let ghost_diagrams_presets = [
+let ghost_diagrams_raw = [
     "' a A a', '    A '",
     "'CcCc  '",
     "'  33Aa', ' 33 Aa'",
@@ -123,3 +123,25 @@ let ghost_diagrams_presets = [
     "'dd11', 'D-3-', '11--'",
     "'3333', '3 1 ', '33  '" 
 ];
+
+function ghost_diagrams_examples() {
+    let result = [ ];
+    for(let i of range(ghost_diagrams_raw.length)) {
+        let item = eval("["+ghost_diagrams_raw[i]+"]");
+        let has_space = item.join("").indexOf(" ") >= 0;
+        item = item.map(tile => tile.replace(/ /g,"-"));
+        
+        if (has_space) {
+            if (item[0].length == 4)
+                item.push("----");
+            else
+                item.push("------");
+        }
+        
+        let name = i+1 + ". "+item.join(",");
+        let url = "?" + Array.from(range(item.length)).map(i => `tile${i}=${item[i]}`).join("&");
+        result.push([name,url]);
+    }
+    
+    return result;
+}

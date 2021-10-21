@@ -1,6 +1,6 @@
 # ghostsurn
 
-Experimental javascript app, under development. A tile layout method (see my Ghost Diagrams and mxgmn's WaveFunctionCollapse), that aims to sample rather than only find an example.
+Javascript app. A tile layout method (see my [Ghost Diagrams](http://www.logarithmic.net/pfh/ghost-diagrams) and [Maxim Gumin](https://twitter.com/ExUtumno)'s [WaveFunctionCollapse](https://github.com/mxgmn/WaveFunctionCollapse)), that aims to sample rather than only find an example.
 
 To run locally:
 

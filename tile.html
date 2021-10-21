@@ -10,7 +10,7 @@
 <a href="https://github.com/pfh/ghostsurn">GitHub &rarr;</a>
 </div>
 
-<h1>ghostsurn 0.1</h1>
+<h1>ghostsurn 0.2</h1>
 
 <div class="controls">
     <div>
@@ -64,7 +64,7 @@
         </div>
     </div>
     
-    <div id=status style="width: 23em; border: 1px solid #ddd; background: #f8f8f8; padding: 0.5em; min-height: 5em;"></div>
+    <div id=status style="width: 17em; border: 1px solid #ddd; background: #f8f8f8; padding: 0.5em; min-height: 5em;"></div>
 </div>
 
 <div class=output>
@@ -105,8 +105,8 @@ function require_tile_inputs(n) {
 
 function read_url() {
     let sp = location.search;
-    //if (sp == "") 
-    //    sp = examples[0][1];
+    if (sp == "") 
+        sp = ghost_diagrams_examples()[0][1];
     
     sp = new URLSearchParams(sp);
     
@@ -301,23 +301,9 @@ function randomize() {
 
 
 
-for(let i of range(ghost_diagrams_presets.length)) {
-    let item = eval("["+ghost_diagrams_presets[i]+"]");
-    let has_space = item.join("").indexOf(" ") >= 0;
-    item = item.map(tile => tile.replace(/ /g,"-"));
-    
-    if (has_space) {
-        if (item[0].length == 4)
-            item.push("----");
-        else
-            item.push("------");
-    }
-    
-    let name = i+1 + ". "+item.join(",");
-    let url = "?" + Array.from(range(item.length)).map(i => `tile${i}=${item[i]}`).join("&");
+for(let [name,url] of ghost_diagrams_examples()) {
     get("examples").innerHTML += `<a href="${url}">${name}</a><br/>`;
 }
-
 
 read_url();
 recompute();
