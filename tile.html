@@ -68,7 +68,7 @@
 </div>
 
 <div class=output>
-  <canvas id=plot onmousedown="on_plot_mousedown()"></canvas>
+  <canvas id=plot></canvas>
 </div>
 
 <div style="float: right; margin-top: 1em;">
@@ -177,7 +177,9 @@ function load_param() {
 }
 
 
-function on_plot_mousedown() {
+function on_plot_mousedown(event) {
+    if (event.buttons != 1) return;
+
     function ticker() {
         which = Math.random();
         redraw();
@@ -304,6 +306,8 @@ function randomize() {
 for(let [name,url] of ghost_diagrams_examples()) {
     get("examples").innerHTML += `<a href="${url}">${name}</a><br/>`;
 }
+
+get("plot").onmousedown = on_plot_mousedown;
 
 read_url();
 recompute();

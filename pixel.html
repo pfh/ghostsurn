@@ -100,7 +100,7 @@
 </div>
 
 <div class=output>
-  <canvas id=plot onmousedown="on_plot_mousedown()"></canvas>
+  <canvas id=plot></canvas>
 </div>
 
 <div style="float: right; margin-top: 1em;">
@@ -218,7 +218,9 @@ function set_pal(list) {
 }
 
 
-function on_plot_mousedown() {
+function on_plot_mousedown(event) {
+    if (event.buttons != 1) return;
+
     function ticker() {
         which = Math.random();
         redraw();
@@ -386,6 +388,8 @@ mask.onchange = recompute;
 
 for(let item of examples)
     get("examples").innerHTML += `<a href="?${item[1]}">${item[0]}</a><br/>`;
+
+get("plot").onmousedown = on_plot_mousedown;
 
 read_url();
 recompute();
