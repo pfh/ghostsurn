@@ -34,8 +34,8 @@ function xy(x,y) { return new XY(x,y); }
 
 
 const edge_specs = {
-    "A":[1,2],
-    "a":[1,-2],
+    "A":[1,1.25],
+    "a":[1,-1.25],
     "B":[0.5,1],
     "b":[0.5,-1],
     "C":[0.25,1],
@@ -80,13 +80,14 @@ const step_6 = { x:xy(2,0).rot(-30), y:xy(0,2) };
 
 function spin_tiles(input) {
     let tiles = [ ];
-    let seen = new Set();
-    for(let tile of input)
-    for(let i of range(tile.tile.length)) {
-        let spun = {...tile, tile:tile.tile.slice(i,tile.length)+tile.tile.slice(0,i)};
-        if (seen.has(spun.tile)) continue;
-        tiles.push(spun);
-        seen.add(spun.tile);
+    for(let tile of input) {
+        let seen = new Set();
+        for(let i of range(tile.tile.length)) {
+            let spun = {...tile, tile:tile.tile.slice(i,tile.length)+tile.tile.slice(0,i)};
+            if (seen.has(spun.tile)) continue;
+            tiles.push(spun);
+            seen.add(spun.tile);
+        }
     }
     return tiles;
 }
@@ -130,11 +131,11 @@ function make_tile(tile) {
     return points;
 }
 
-function draw_tile(ctx, tile, x, y, scale, border) {
+function draw_tile(ctx, tile, x, y, scale, all_offset, border) {
     let n = tile.tile.length;
     let step = n==4?step_4:step_6;
 
-    let offset = step.x.scale(x).add( step.y.scale(y) ).add(xy(2,2));
+    let offset = step.x.scale(x).add( step.y.scale(y) );
     let p = make_tile(tile);
     
     if (p.length == 0) return;
@@ -146,10 +147,7 @@ function draw_tile(ctx, tile, x, y, scale, border) {
         p.push([ a.add(b.rot(-90)), a,a,a, a.add(b.rot(90)) ])
     }
     
-    p = p.map(points => points.map(point => point.add(offset).scale(scale)));
-    
-    ctx.fillStyle = tile.color;
-    ctx.lineWidth = 1.5;
+    p = p.map(points => points.map(point => point.add(offset).scale(scale).add(all_offset)));
     
     ctx.beginPath();
     ctx.moveTo(p[0][1].x,p[0][1].y);
@@ -167,32 +165,46 @@ function draw_tile(ctx, tile, x, y, scale, border) {
         ctx.bezierCurveTo(b.x,b.y,c.x,c.y,d.x,d.y);
     }
     ctx.closePath();
-    if (border)
+    if (border) {
+        ctx.strokeStyle = "#000000";
+        ctx.lineWidth = 1.5;
         ctx.stroke();
-    else
+    } else {
+        ctx.fillStyle = tile.color;
+        ctx.strokeStyle = tile.color;
+        ctx.lineWidth = 0.75;
         ctx.fill();
+        ctx.stroke();
+    }
 }
 
-function draw_tile_layout(canvas, width, height, scale, word, tiles) {
+function draw_tile_layout(canvas, width, height, scale, word, tiles, do_outlines, bg_color) {
     let ctx = canvas.getContext("2d");
+    
+    let last_y = word.length/width-1;
     
     let n = tiles[0].tile.length;
     let step = n==4?step_4:step_6;
-    let offset = step.x.scale(width-1).add( step.y.scale(height-1) ).add(xy(4,4)).scale(scale);
+    let offset0 = step.x.scale(width-1).scale(scale);
+    let offset1 = step.y.scale(height-1).scale(scale);
+    let offset2 = step.y.scale(last_y).scale(scale);
+    let offset = xy(0, (offset1.y-offset2.y)/2-offset0.y);
     
-    canvas.width = offset.x;
-    canvas.height = offset.y;
+    canvas.width = offset0.x;
+    canvas.height = offset1.y - offset0.y;
     
-    ctx.fillStyle ="#f8f8f8";
+    ctx.fillStyle = bg_color;
     ctx.fillRect(0,0,canvas.width,canvas.height);
     
     for(let y of range(height))
     for(let x of range(width))
     if (y*width+x < word.length)
-        draw_tile(ctx, tiles[ word[y*width+x].codePointAt() ], x, y, scale, false);
+        draw_tile(ctx, tiles[ word[y*width+x].codePointAt() ], x, y, scale, offset, false);
     
-    for(let y of range(height))
-    for(let x of range(width))
-    if (y*width+x < word.length)
-        draw_tile(ctx, tiles[ word[y*width+x].codePointAt() ], x, y, scale, true);
+    if (do_outlines) {
+        for(let y of range(height))
+        for(let x of range(width))
+        if (y*width+x < word.length)
+            draw_tile(ctx, tiles[ word[y*width+x].codePointAt() ], x, y, scale, offset, true);
+    }
 }

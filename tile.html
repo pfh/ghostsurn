@@ -4,21 +4,29 @@
 <link rel="icon" type="image/png" href="../favicon.png">
 <link rel="stylesheet" href="style.css">
 
+<title>ghostsurn tiles</title>
+
 <div style="float: right">
 <a href="https://github.com/pfh/ghostsurn">GitHub &rarr;</a>
 </div>
 
-<h1>ghostsurn 0.1 - tiles</h1>
+<h1>ghostsurn 0.1</h1>
 
 <div class="controls">
+    <div>
+        <a class="switch" href="pixel.html">Pixels</a>
+        <a class="switch switch_active" href="tile.html">Tiles</a>
+    </div>
     <div class=grid>
-        <div class=item>Tiles</div>
         <div class=item>
-            <p><input type=text id=tile0 oninput="recompute()"> <input type=color id=pal0 onchange="redraw()"></p>
-            <p><input type=text id=tile1 oninput="recompute()"> <input type=color id=pal1 onchange="redraw()"></p>
-            <p><input type=text id=tile2 oninput="recompute()"> <input type=color id=pal2 onchange="redraw()"></p>
-            <p><input type=text id=tile3 oninput="recompute()"> <input type=color id=pal3 onchange="redraw()"></p>
+            Tiles <button onclick="more_tile_inputs()" title="add a tile">+</button>
         </div>
+        <div class=item id=tile_area>
+        </div>
+        <div class=item>Background</div>
+        <div class=item><input type=color id=bg onchange="redraw()"></div>
+        <div class=item>Outlines</div>
+        <div class=item><input type=checkbox id=outlines oninput="redraw()"></div>
         <div class=item>Width</div>
         <div class=item>
           <button onclick="inc_small('width'); recompute();">+</button>
@@ -52,7 +60,7 @@
         <div class=item></div>
         <div class=item>
           <button id=again onclick="recompute()" title="draw a new sample">Again</button>
-          <button id=randomize onclick="randomize()" title="apply variable reinforcement to the user">Randomize pattern</button>
+          <button id=randomize onclick="randomize()" title="apply variable reinforcement to the user">Randomize tiles</button>
         </div>
     </div>
     
@@ -63,9 +71,17 @@
   <canvas id=plot onmousedown="on_plot_mousedown()"></canvas>
 </div>
 
+<div style="float: right; margin-top: 1em;">
+  <b>Examples</b><br/><br/>
+  <div id=examples></div>
+</div>
+
+<p style="clear: left;">
+This app lays out tiles based on an underlying square or hexagonal tiling pattern. Specify each tile using a 4 or 6 character string. The characters specify edges of the tiles. "AaBbCcDd" specify pointy edges. "A" connects to "a", etc. "1234" specify flat edges. These can connect to themselves. "-" is a blank edge, and behaves like a flat edge. 
 
 <script src=sampler.js></script>
 <script src=interface.js></script>
+<script src=examples.js></script>
 <script src=tile.js></script>
 
 <script>
@@ -73,9 +89,19 @@
 
 let canvas = get("plot");
 
+let compute_comment = "";
 let result = null;
 let which = 0;
 let param = { };
+
+let n_tile_inputs = 0;
+
+function require_tile_inputs(n) {
+    while(n_tile_inputs < n) {
+        get("tile_area").innerHTML += `<input type=text id=tile${n_tile_inputs} oninput="recompute()"> <input type=color id=pal${n_tile_inputs} onchange="redraw()"><br>`;
+        n_tile_inputs++;
+    }
+}
 
 function read_url() {
     let sp = location.search;
@@ -83,41 +109,46 @@ function read_url() {
     //    sp = examples[0][1];
     
     sp = new URLSearchParams(sp);
-    get("width").value = sp_get_int(sp, "width", 30);
-    get("height").value = sp_get_int(sp, "height", 60);
+    
+    let n=0;
+    while(sp.has("tile"+n)) 
+        n++;
+    require_tile_inputs(n);
+
+    get("bg").value = sp_get_str(sp, "bg", "#ffffff");
+    get("outlines").checked = sp_get_int(sp, "outlines", 1) > 0;
+    
+    get("width").value = sp_get_int(sp, "width", 15);
+    get("height").value = sp_get_int(sp, "height", 20);
     get("max_memory").value = sp_get_int(sp, "max_memory", 1e5);
     get("effort").value = sp_get_int(sp, "effort", 1000);
-    get("scale").value = sp_get_int(sp, "scale", 10);
+    get("scale").value = sp_get_int(sp, "scale", 20);
     
-    get("tile0").value = sp_get_str(sp, "tile0", "");
-    get("tile1").value = sp_get_str(sp, "tile1", "");
-    get("tile2").value = sp_get_str(sp, "tile2", "");
-    get("tile3").value = sp_get_str(sp, "tile3", "");
-
-    get("pal0").value = sp_get_str(sp, "pal0", "#fce94f");
-    get("pal1").value = sp_get_str(sp, "pal1", "#d9138a");
-    get("pal2").value = sp_get_str(sp, "pal2", "#12a4d9");
-    get("pal3").value = sp_get_str(sp, "pal3", "#000000");
+    let default_palette = [
+        "#fce94f", "#d9138a", "#12a4d9", "#000000", "#ffffff"
+    ];
+    for(let i of range(n_tile_inputs)) {
+        get("tile"+i).value = sp_get_str(sp, "tile"+i, "");
+        get("pal"+i).value = sp_get_str(sp, "pal"+i, default_palette[i%default_palette.length]);
+    }
 }
 
 
 function update_url() {
     let sp = new URLSearchParams();
+
+    sp.set("bg",param.bg);
+    sp.set("outlines",param.outlines?1:0);
     sp.set("width",param.width);
     sp.set("height",param.height);
     sp.set("max_memory",param.max_memory);
     sp.set("effort",param.effort);
     sp.set("scale",param.scale);
     
-    sp.set("tile0",param.tiles[0].tile);
-    sp.set("tile1",param.tiles[1].tile);
-    sp.set("tile2",param.tiles[2].tile);
-    sp.set("tile3",param.tiles[3].tile);
-
-    sp.set("pal0",param.tiles[0].color);
-    sp.set("pal1",param.tiles[1].color);
-    sp.set("pal2",param.tiles[2].color);
-    sp.set("pal3",param.tiles[3].color);
+    for(let i of range(param.tiles.length)) {
+        sp.set("tile"+i,param.tiles[i].tile);
+        sp.set("pal"+i,param.tiles[i].color);
+    }
     
     let url = new URL(location.href);
     url.search = sp;
@@ -127,17 +158,19 @@ function update_url() {
 
 
 function load_param() {
+    param.bg = get("bg").value;
+    param.outlines = get("outlines").checked;
     param.width = parse_int(get("width").value);
     param.height = parse_int(get("height").value);
     param.max_memory = parse_int(get("max_memory").value);
     param.effort = parse_int(get("effort").value);
     param.scale = parse_int(get("scale").value);
-    param.tiles = [ 
-        {tile:get("tile0").value.trim(), color:get("pal0").value},
-        {tile:get("tile1").value.trim(), color:get("pal1").value},
-        {tile:get("tile2").value.trim(), color:get("pal2").value},
-        {tile:get("tile3").value.trim(), color:get("pal3").value},
-    ];
+    param.tiles = [ ];
+    for(let i of range(n_tile_inputs))
+        param.tiles.push({tile:get("tile"+i).value.trim(), color:get("pal"+i).value});
+    
+    while(param.tiles.length && param.tiles[param.tiles.length-1].tile == "")
+        param.tiles.pop();
         
     param.tiles_processed = param.tiles.filter(tile => tile.tile.length>0);
     param.tiles_spun = spin_tiles(param.tiles_processed);
@@ -155,10 +188,32 @@ function on_plot_mousedown() {
     setTimeout(ticker);
 }
 
+function more_tile_inputs() {
+   require_tile_inputs(n_tile_inputs+1);
+   
+   read_url();
+   redraw();
+}
 
 function redraw() {
     load_param();
     update_url();
+    
+    let status = compute_comment;
+    
+    if (result !== null && result.finished && result.words.length == 0)
+        status = `Failed to find a layout.`;
+    else if (result !== null && result.finished)
+        status = `Success.`;
+    else if (result !== null)
+        status = `Running...`;
+    else if (worker !== null && !ready)
+        status = `Running...`;
+        
+    if (result !== null)
+        status += "<br><br>"+result.comment;
+    
+    get("status").innerHTML = status;
     
     if (result === null || result.words.length == 0) {
         let ctx = canvas.getContext("2d");
@@ -169,7 +224,7 @@ function redraw() {
 
     let word = result.words[ Math.floor(result.words.length*which) ];
 
-    draw_tile_layout(canvas, result.width, result.height, param.scale, word, param.tiles_spun);
+    draw_tile_layout(canvas, result.width, result.height, param.scale, word, param.tiles_spun, param.outlines, param.bg);
 }
 
 
@@ -177,10 +232,29 @@ function recompute() {
     load_param();
     
     let bad = false;
+
     result = null;
+    compute_comment = "";
     
     bad = param.tiles_spun.length == 0;
-    bad = bad || (param.tiles_spun.filter(tile => tile.tile.length != param.tiles_spun[0].tile.length).length) 
+    
+    if (!bad && param.tiles_spun[0].tile.length != 4 && param.tiles_spun[0].tile.length != 6) {
+        compute_comment = "Tiles should all be either 4 or 6 characters."
+        bad = true;
+    }
+    
+    if (!bad && param.tiles_spun.filter(tile => tile.tile.length != param.tiles_spun[0].tile.length).length) {
+        compute_comment = "Tiles should all be the same size."
+        bad = true;
+    }
+    
+    if (!bad)
+    for(let char of param.tiles_spun.map(tile=>tile.tile).join(""))
+    if (!edge_partners.hasOwnProperty(char)) {
+        compute_comment = `"${char}" is not an ok edge character.`;
+        bad = true;
+        break;
+    }
     
     if (bad) {
         stop_job();
@@ -199,6 +273,49 @@ function recompute() {
     });
     
     redraw();
+}
+
+
+function randomize() {
+    let ind = [ ];
+    for(let i of range(param.tiles.length))
+    if (param.tiles[i].tile.length > 0)
+        ind.push(i);
+    
+    if (ind.length == 0) return;
+    
+    let pool = Array.from(ind.map(i=>param.tiles[i].tile).join(""));
+    shuffle(pool);
+    
+    for(let i of ind) {
+        let newtile = "";
+        for(let c of param.tiles[i].tile)
+            newtile += pool.pop();
+        param.tiles[i].tile = newtile;
+    }
+    
+    update_url();
+    read_url();
+    recompute();
+}
+
+
+
+for(let i of range(ghost_diagrams_presets.length)) {
+    let item = eval("["+ghost_diagrams_presets[i]+"]");
+    let has_space = item.join("").indexOf(" ") >= 0;
+    item = item.map(tile => tile.replace(/ /g,"-"));
+    
+    if (has_space) {
+        if (item[0].length == 4)
+            item.push("----");
+        else
+            item.push("------");
+    }
+    
+    let name = i+1 + ". "+item.join(",");
+    let url = "?" + Array.from(range(item.length)).map(i => `tile${i}=${item[i]}`).join("&");
+    get("examples").innerHTML += `<a href="${url}">${name}</a><br/>`;
 }
 
 

@@ -1,6 +1,24 @@
 
 body { font-family: sans-serif; margin: 1em 1em 5em 1em; }
 
+.switch {
+    color: black;
+    display: inline-block;
+    font-size: 125%;
+    background: #dddddd;
+    margin: 0.25em 0.25em 1em 0.25em;
+    padding: 0.25em;
+    border-radius: 0.125em;
+    min-width: 6em;
+    text-align: center;
+    border: 1px solid black;
+}
+
+.switch_active {
+    border: 2px solid black;
+    background: #ccccff;
+}
+
 .controls { 
     float: left; 
     margin-top: 1em; 
@@ -43,7 +61,9 @@ input[type=radio] {
 
 input[type=color] {
     width: 3em;
-    height: 1.5em;
+    height: 2em;
+    background: none;
+    border: none;
     vertical-align: middle;
 }
 
