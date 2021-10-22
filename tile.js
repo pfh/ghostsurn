@@ -190,8 +190,14 @@ function draw_tile_layout(canvas, width, height, scale, word, tiles, do_outlines
     let offset2 = step.y.scale(last_y).scale(scale);
     let offset = xy(0, (offset1.y-offset2.y)/2-offset0.y);
     
-    canvas.width = offset0.x;
-    canvas.height = offset1.y - offset0.y;
+    let cwidth = offset0.x;
+    let cheight = offset1.y - offset0.y
+    let cscale = window.devicePixelRatio;
+    canvas.style.width = cwidth+"px";
+    canvas.style.height = cheight+"px";
+    canvas.width = (cwidth*cscale)>>0;
+    canvas.height = (cheight*cscale)>>0;
+    ctx.scale(cscale,cscale);
     
     ctx.fillStyle = bg_color;
     ctx.fillRect(0,0,canvas.width,canvas.height);

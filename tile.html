@@ -309,6 +309,9 @@ for(let [name,url] of ghost_diagrams_examples()) {
 
 get("plot").onmousedown = on_plot_mousedown;
 
+// Capture dpi changes
+window.onresize = redraw;
+
 read_url();
 recompute();
 
