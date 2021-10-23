@@ -1,4 +1,65 @@
 
+
+
+
+function make_dropper(items, weights) {
+    if (items.length == 0)
+        return null;
+
+    if (items.length == 1)
+        return {leaf:true,item:items[0],n:1,weight:weights[0]};
+    
+    let mid = (items.length/2)>>0;
+    let left = make_dropper(items.slice(0,mid), weights.slice(0,mid));
+    let right = make_dropper(items.slice(mid,items.length), weights.slice(mid,items.length));
+    return {leaf:false,n:left.n+right.n,weight:left.weight+right.weight,left:left,right:right};
+}
+
+function dropper_drop(dropper, total) {
+    if (dropper.leaf)
+        return [dropper.item, dropper.weight, null];
+    
+    let weight1 = total*dropper.left.n-dropper.left.weight;
+    let weight2 = total*dropper.right.n-dropper.right.weight;
+
+    let sub1 = dropper.left, sub2 = dropper.right;
+    if (Math.random()*(weight1+weight2) > weight1)
+        [sub1,sub2] = [sub2,sub1];
+    
+    let item, weight;
+    [item, weight, sub1] = dropper_drop(sub1, total);
+    
+    if (sub1 === null)
+        return [ item, weight, sub2 ];
+    
+    return [item, weight, {leaf:false,n:sub1.n+sub2.n,weight:sub1.weight+sub2.weight,left:sub1,right:sub2}];
+}
+
+
+/* Too easily drops an important thing */
+function drop_all(items, weights) {
+    let dropper = make_dropper(items, weights);
+    let item, weight;
+    let result = [ ];
+    while(dropper !== null) {
+        [item,weight,dropper] = dropper_drop(dropper, dropper.weight);
+        result.push([item,weight]);
+    }    
+    result.reverse();
+    return result;
+}
+
+
+
+
+
+
+
+
+
+
+
+
 // WaveFunctionCollapse-like validity checking
 // Note: Unlike WFC, this makes choices in raster scan order.
 class Validity_WFC extends Validity {

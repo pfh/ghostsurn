@@ -27,6 +27,92 @@ function get_subword(word, indices) {
 }
 
 
+function get_random_choice(rand, probs) {
+    let i = 0;
+    while(true) {
+        if (i >= probs.length-1) return i;
+        rand -= probs[i];
+        if (rand <= 0) return i;
+        i++
+    }
+}
+
+
+
+function get_weighted_samples(initial, n, choices, choice_weights, effort, get_advancer, callback) {
+    let last_callback = Date.now();
+    let n_choices = choices.length;
+    let saturated = null;
+    
+    // Initial pool of samples contains the initial word
+    let words = [ initial ];
+    let weights = [ 1 ];
+
+    // Try extending each word in the pool by each of the possible choices.
+    // If valid extensions don't exceed effort, the new pool is exhaustive.
+    // Otherwise a random subset of valid extensions is kept.
+    for(let i of range(n)) {
+        //let todo = Array.from(range(words.length * n_choices));
+        //let todo_weights = todo.map(j => weights[j/n_choices>>0] * choice_weights[j%n_choices]);
+        
+        let advancer = get_advancer(i);
+
+        let new_words = [ ];
+        let new_weights = [ ];
+        
+        let todo = [ ];
+        //let part = Math.max(Math.max(...weights)*0.01, Math.min(...weights)); //!!!!!!!!!!!!!!!
+        let part = Math.min(...weights);
+        for(let j of range(words.length*n_choices)) {
+            let weight = weights[j/n_choices>>0] * choice_weights[j%n_choices];
+            let n = Math.min(100, Math.floor(weight/part + Math.random())); //!!!!!!!!!!!!!!!!!!!!!!
+            for(let k of range(n))
+                todo.push([j, weight/n]);
+        }
+        shuffle(todo);
+        
+        let seen = new Map();
+        
+        //for(let [j, weight] of drop_all(todo, todo_weights)) {
+        for(let [j, weight] of todo) {
+            if (!seen.has(j)) {
+                let item = advancer(words[j/n_choices>>0], choices[j%n_choices]);
+                if (item === null) {
+                    seen.set(j, -1);
+                } else {
+                    seen.set(j, new_words.length);                
+                    new_words.push(item);
+                    new_weights.push(weight);
+                }
+            } else {            
+                let k = seen.get(j);
+                if (k >= 0)
+                    new_weights[k] += weight;
+            }
+            
+            if (new_words.length >= effort) break;
+        }
+        
+        if (saturated === null && new_words.length >= effort)
+            saturated = i;
+
+        words = new_words;
+        weights = new_weights;
+        
+        // Make weights add to 1 (and prevent floating point overflow)
+        let total = weights.reduce((a, b) => a + b, 0);
+        weights = weights.map(weight => weight/total);
+        
+        if (callback !== null && Date.now() > last_callback + 200) {
+            callback({words, weights, saturated});
+            last_callback = Date.now();
+        }
+    }
+
+    return {words, weights, saturated};
+}
+
+
 /* Sample a set of words produced by making [n] choices amongst [choices].
 
    initial is an initial blank slate.
@@ -81,11 +167,12 @@ function get_samples(initial, n, choices, effort, get_advancer, callback) {
 
 /* Base class for a layout validity checker. */
 class Validity {
-    constructor(width, height, initial, choices) {
+    constructor(width, height, initial, choices, choice_weights) {
         this.width = width;
         this.height = height;
         this.initial = initial;
         this.choices = choices;
+        this.choice_weights = choice_weights;
     }
 
     sample(effort, callback) {
@@ -103,7 +190,7 @@ class Validity {
             }
             
             //Only report one sample while running, save some time decoding.
-            if (!finished) output.words = output.words.slice(0,1);
+            //if (!finished) output.words = output.words.slice(0,1);
             
             output.words = output.words.map(item => this.get_state_word(item));
             return output;
@@ -112,10 +199,11 @@ class Validity {
             callback(resulter(words, false)); 
         }
 
-        let words = get_samples(
+        let words = get_weighted_samples(
             this.initial,
             this.width*this.height, 
-            this.choices, 
+            this.choices,
+            this.choice_weights,
             effort, 
             this.get_advancer.bind(this),
             callback2);
@@ -128,14 +216,16 @@ class Validity {
 
 /* The main validity checker class. */
 class Validity_pat extends Validity {
-    constructor(width, height, xs, ys, valids) {
+    constructor(width, height, xs, ys, valids, weights) {
         let choices = new Set();
         for(let word of valids)
             for(let choice of word)
                 choices.add(choice);
         choices = Array.from(choices);
         
-        super(width, height, "", choices);
+        let choice_weights = choices.map(char => weights[char]);        
+        
+        super(width, height, "", choices, choice_weights);
         
         this.xs = xs;
         this.ys = ys;
@@ -331,7 +421,7 @@ function prune(xs, ys, valids) {
 
 // Join several pattern specifications, elaborate and prune.
 // Return a Validity object that can produce samples.
-function make_validity(width, height, specs, max_memory) {
+function make_validity(width, height, specs, weights, max_memory) {
     if (specs.length == 0) 
         specs = [{xs:[], ys:[], valids:[]}];
     
@@ -362,7 +452,7 @@ function make_validity(width, height, specs, max_memory) {
     }
         
     
-    let validity = new Validity_pat(width, height, spec.xs, spec.ys, spec.valids);
+    let validity = new Validity_pat(width, height, spec.xs, spec.ys, spec.valids, weights);
     
     validity.comment = `Initial ${spec_initial_p}:${spec_initial_n} patterns expanded to ${spec.xs.length}:${spec.valids.length} (${seq}).`;
     
@@ -371,8 +461,8 @@ function make_validity(width, height, specs, max_memory) {
 
 
 // This is called in the worker.
-function run_job(width, height, specs, effort, max_memory) {
-    let validity = make_validity(width, height, specs, max_memory);
+function run_job(width, height, specs, weights, effort, max_memory) {
+    let validity = make_validity(width, height, specs, weights, max_memory);
     let result = validity.sample(effort, result => self.postMessage({...result, comment:validity.comment}));        
     self.postMessage({...result, comment:validity.comment});
 }

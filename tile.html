@@ -1,6 +1,9 @@
 <!doctype html>
 <html lang=en>
 <meta charset=utf-8>
+
+<meta http-equiv="Cache-Control" content="no-store" />
+
 <link rel="icon" type="image/png" href="../favicon.png">
 <link rel="stylesheet" href="style.css">
 
@@ -22,6 +25,7 @@
             Tiles <button onclick="more_tile_inputs()" title="add a tile">+</button>
         </div>
         <div class=item id=tile_area>
+            <div style="text-align: right; font-size: 75%;">Weight</div>
         </div>
         <div class=item>Background</div>
         <div class=item><input type=color id=bg onchange="redraw()"></div>
@@ -71,7 +75,7 @@
   <canvas id=plot></canvas>
 </div>
 
-<div style="float: right; margin-top: 1em;">
+<div style="float: right; margin-top: 1em; max-width: 15em;">
   <b>Examples</b><br/><br/>
   <div id=examples></div>
 </div>
@@ -91,20 +95,24 @@ let canvas = get("plot");
 
 let compute_comment = "";
 let result = null;
-let which = 0;
+let which = Math.random();
 let param = { };
 
 let n_tile_inputs = 0;
 
 function require_tile_inputs(n) {
     while(n_tile_inputs < n) {
-        get("tile_area").innerHTML += `<input type=text id=tile${n_tile_inputs} oninput="recompute()"> <input type=color id=pal${n_tile_inputs} onchange="redraw()"><br>`;
+        get("tile_area").innerHTML += `<input type=text id=tile${n_tile_inputs} oninput="recompute()"> <input type=color id=pal${n_tile_inputs} onchange="redraw()"> <input type=text id=weight${n_tile_inputs} oninput="recompute()" style="width: 3em"><br>`;
         n_tile_inputs++;
     }
 }
 
 function read_url() {
-    let sp = location.search;
+    let sp = location.hash.slice(1);
+
+    if (sp == "")
+        sp = location.search;
+
     if (sp == "") 
         sp = ghost_diagrams_examples()[0][1];
     
@@ -121,8 +129,8 @@ function read_url() {
     get("width").value = sp_get_int(sp, "width", 15);
     get("height").value = sp_get_int(sp, "height", 20);
     get("max_memory").value = sp_get_int(sp, "max_memory", 1e5);
-    get("effort").value = sp_get_int(sp, "effort", 1000);
-    get("scale").value = sp_get_int(sp, "scale", 20);
+    get("effort").value = sp_get_int(sp, "effort", 250);
+    get("scale").value = sp_get_int(sp, "scale", 30);
     
     let default_palette = [
         "#fce94f", "#d9138a", "#12a4d9", "#000000", "#ffffff"
@@ -130,6 +138,7 @@ function read_url() {
     for(let i of range(n_tile_inputs)) {
         get("tile"+i).value = sp_get_str(sp, "tile"+i, "");
         get("pal"+i).value = sp_get_str(sp, "pal"+i, default_palette[i%default_palette.length]);
+        get("weight"+i).value = sp_get_str(sp, "weight"+i, "1");
     }
 }
 
@@ -148,10 +157,12 @@ function update_url() {
     for(let i of range(param.tiles.length)) {
         sp.set("tile"+i,param.tiles[i].tile);
         sp.set("pal"+i,param.tiles[i].color);
+        sp.set("weight"+i,param.tiles[i].weight);
     }
     
     let url = new URL(location.href);
-    url.search = sp;
+    url.search = "";
+    url.hash = sp;
     if (url != location.href)
         history.replaceState(history.state, document.title, url);
 }
@@ -167,7 +178,11 @@ function load_param() {
     param.scale = parse_int(get("scale").value);
     param.tiles = [ ];
     for(let i of range(n_tile_inputs))
-        param.tiles.push({tile:get("tile"+i).value.trim(), color:get("pal"+i).value});
+        param.tiles.push({
+            tile:get("tile"+i).value.trim(), 
+            color:get("pal"+i).value,
+            weight:parseFloat(get("weight"+i).value),
+        });
     
     while(param.tiles.length && param.tiles[param.tiles.length-1].tile == "")
         param.tiles.pop();
@@ -224,7 +239,7 @@ function redraw() {
         return;
     }
 
-    let word = result.words[ Math.floor(result.words.length*which) ];
+    let word = result.words[ get_random_choice(which, result.weights) ];
 
     draw_tile_layout(canvas, result.width, result.height, param.scale, word, param.tiles_spun, param.outlines, param.bg);
 }
@@ -266,7 +281,9 @@ function recompute() {
     
     let specs = tile_specs( param.tiles_spun );
     let specs_str = JSON.stringify(specs);
-    let command = `run_job(${param.width}, ${param.height}, ${specs_str}, ${param.effort}, ${param.max_memory})`;
+    let weights = tile_weights( param.tiles_spun );
+    let weights_str = JSON.stringify(weights);
+    let command = `run_job(${param.width}, ${param.height}, ${specs_str}, ${weights_str}, ${param.effort}, ${param.max_memory})`;
     job(command, (msg)=> {
         result = msg;
         if (result.finished)
@@ -304,13 +321,16 @@ function randomize() {
 
 
 for(let [name,url] of ghost_diagrams_examples()) {
-    get("examples").innerHTML += `<a href="${url}">${name}</a><br/>`;
+    get("examples").innerHTML += `<a href="#${url}">${name}</a><br/>`;
 }
 
 get("plot").onmousedown = on_plot_mousedown;
 
-// Capture dpi changes
+// Capture dpi changes due to zooming. Canvas will be redrawn appropriately.
+// Unfortunately this doesn't detect moving between hidpi/non-hidpi screens.
 window.onresize = redraw;
+
+window.onhashchange = () => { read_url(); recompute(); };
 
 read_url();
 recompute();

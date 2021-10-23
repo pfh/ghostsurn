@@ -43,15 +43,15 @@ let ghost_diagrams_raw = [
     "' a A a', '    A '",
     "'CcCc  '",
     "'  33Aa', ' 33 Aa'",
-    "'ab A  ', 'B  C  ', 'B  c  ', 'B  D  ', 'B  d  '",
-    "'d D 4 ', 'd  D  ', '44    '",
+    //"'ab A  ', 'B  C  ', 'B  c  ', 'B  D  ', 'B  d  '",
+    //"'d D 4 ', 'd  D  ', '44    '",
     "'a  A 4', 'aA    ', '4     ', '4 4   '",
     "'a  A 4', 'aA    ', '4     '",
-    "'3-3-2-', '3--2--', '1-----'",
+    //"'3-3-2-', '3--2--', '1-----'",
     "'   bB ', 'bAaB  ', 'aAaA  '",    
     "'B Aa  ', 'b  Aa '",
-    "'44    ', '11  4 '",
-    "' a  4 ', ' 4 4  ', '  A441'",
+    //"'44    ', '11  4 '",
+    //"' a  4 ', ' 4 4  ', '  A441'",
     "'1 1 1 ', '2  12 '",
     "' AAaa ', 'a  A  '",
     "' a A  ', 'Aaa  A'",
@@ -96,10 +96,10 @@ let ghost_diagrams_raw = [
     "'d4 Dd ', 'd D   ', 'DD    '",
     "'aaAA11', '1 1   ', 'a  A  ', 'a    A'",
     "'cCcC  ', 'c  C  '",
-    "'C22222', 'cC  22', 'cc  2C', '2 2   '",
+    //"'C22222', 'cC  22', 'cc  2C', '2 2   '",
     "'b-B-BB', 'b-----'",
     "'cCc--C', 'cC----', 'c-C---'",
-    "'b 4   ', '3     ', 'B   44', '4  3  '",
+    //"'b 4   ', '3     ', 'B   44', '4  3  '",
     "'aa A  ', 'c A   ', 'a     ', 'C3    '",
     "'bBBb  ', 'b BBBB', 'bbbbbB'",
     "'B B   ', 'bb4 B ', 'B 4   '",
@@ -111,21 +111,46 @@ let ghost_diagrams_raw = [
     "'bbb-b-', 'b-B---', 'B-b---', 'B-----'",
     
     "'3 3 ', 'b B3', '3   '",
-    "' 111'",
+    //"' 111'",
     "'abA ', 'B C ', 'B c ', 'B D ', 'B d '",
     "'4A4a', '  a4', ' A B', '  Ab'",
     "'acAC', 'adBD', 'bcBD', 'bdAC'",
-    "'1111', '   1'",
+    //"'1111', '   1'",
     "' bbb', '  BB'",
-    "'1B1B', 'a A ', ' bA ', 'ab B'",
+    //"'1B1B', 'a A ', ' bA ', 'ab B'",
     "'cC C', 'cc C'",
     "'c-C-', 'cC--'",
-    "'dd11', 'D-3-', '11--'",
+    //"'dd11', 'D-3-', '11--'",
     "'3333', '3 1 ', '33  '" 
 ];
 
+let tile_examples = [
+    ["Eastern windows", "tile0=dd22&pal0=%23fce94f&weight0=2&tile1=D-4-&pal1=%23d9138a&weight1=1&tile2=22--&pal2=%2312a4d9&weight2=1"],
+    
+    ["Feynman's van", "outlines=0&tile0=d-D-4-&pal0=%23fce94f&weight0=2&tile1=d--D--&pal1=%23d9138a&weight1=1&tile2=44----&pal2=%2312a4d9&weight2=1"],
+    
+    ["DNA", "max_memory=1000000&effort=250&tile0=ab-A--&pal0=%239af4fa&weight0=1&tile1=B--C--&pal1=%2373d216&weight1=1&tile2=B--c--&pal2=%23cc0000&weight2=1&tile3=B--D--&pal3=%23000000&weight3=1&tile4=B--d--&pal4=%234453ff&weight4=1&tile5=------&pal5=%23fce94f&weight5=2"],
+    
+    ["Cells", "tile0=3-3-2-&pal0=%23fce94f&weight0=2.5&tile1=3--2--&pal1=%23d9138a&weight1=1.5&tile2=1-----&pal2=%2312a4d9&weight2=1"],
+    
+    ["Binary tree", "bg=%23555753&tile0=4B4B&pal0=%23ffffff&weight0=2&tile1=c-C-&pal1=%23d9138a&weight1=1&tile2=-bC-&pal2=%2312a4d9&weight2=1&tile3=cb-B&pal3=%23fce94f&weight3=1&tile4=----&pal4=%23ffffff&weight4=1"],
+    
+    ["Rectangles", "bg=%23c4a000&tile0=1444&pal0=%23fce94f&weight0=1&tile1=1111&pal1=%2375507b&weight1=1.5"],
+    
+    ["Society", "tile0=-a--4-&pal0=%23fce94f&weight0=1&tile1=-4-4--&pal1=%23d9138a&weight1=1&tile2=--A441&pal2=%2312a4d9&weight2=2&tile3=------&pal3=%23000000&weight3=1"],
+    
+    ["Batons", "tile0=b-4---&pal0=%23fce94f&weight0=1&tile1=3-----&pal1=%23d9138a&weight1=0.5&tile2=B---44&pal2=%2312a4d9&weight2=1&tile3=4--3--&pal3=%23000000&weight3=1&tile4=------&pal4=%23ffffff&weight4=0.5"],
+    
+    ["Triangle net", "tile0=44----&pal0=%23fce94f&weight0=1&tile1=11--4-&pal1=%23d9138a&weight1=1.5"],
+
+    ["Different but connected", "tile0=C22222&pal0=%23fce94f&weight0=1&tile1=cC--22&pal1=%23d9138a&weight1=1&tile2=cc--2C&pal2=%2312a4d9&weight2=1&tile3=2-2---&pal3=%23000000&weight3=0.5&tile4=------&pal4=%23ffffff&weight4=0.5"],
+    
+    ["Snake puppets", "outlines=0&tile0=141---&pal0=%23fce94f&weight0=1&tile1=4--4--&pal1=%23d9138a&weight1=1.5&tile2=1-1---&pal2=%2312a4d9&weight2=1&tile3=------&pal3=%23000000&weight3=1"],
+];
+
 function ghost_diagrams_examples() {
-    let result = [ ];
+    let result = tile_examples.slice();
+    
     for(let i of range(ghost_diagrams_raw.length)) {
         let item = eval("["+ghost_diagrams_raw[i]+"]");
         let has_space = item.join("").indexOf(" ") >= 0;
@@ -138,8 +163,8 @@ function ghost_diagrams_examples() {
                 item.push("------");
         }
         
-        let name = i+1 + ". "+item.join(",");
-        let url = "?" + Array.from(range(item.length)).map(i => `tile${i}=${item[i]}`).join("&");
+        let name = item.join(",");
+        let url = Array.from(range(item.length)).map(i => `tile${i}=${item[i]}`).join("&");
         result.push([name,url]);
     }
     

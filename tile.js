@@ -38,10 +38,10 @@ const edge_specs = {
     "a":[1,-1.25],
     "B":[0.5,1],
     "b":[0.5,-1],
-    "C":[0.25,1],
-    "c":[0.25,-1],
-    "D":[0.1,1],
-    "d":[0.1,-1],
+    "C":[0.25,0.75],
+    "c":[0.25,-0.75],
+    "D":[0.1,0.5],
+    "d":[0.1,-0.5],
     
     "1":[1,0],
     "2":[0.5,0],
@@ -110,6 +110,12 @@ function tile_specs(tiles) {
     return specs;
 }
 
+function tile_weights(tiles) {
+    let result = { };
+    for(let i of range(tiles.length))
+        result[ String.fromCodePoint(i) ] = tiles[i].weight;
+    return result;
+}
 
 
 function make_edge(char, halfside) {
@@ -185,10 +191,13 @@ function draw_tile_layout(canvas, width, height, scale, word, tiles, do_outlines
     
     let n = tiles[0].tile.length;
     let step = n==4?step_4:step_6;
+    
+    scale *= 2/step.x.x;
+    
     let offset0 = step.x.scale(width-1).scale(scale);
     let offset1 = step.y.scale(height-1).scale(scale);
     let offset2 = step.y.scale(last_y).scale(scale);
-    let offset = xy(0, (offset1.y-offset2.y)/2-offset0.y);
+    let offset = xy(0, Math.min(0, (offset1.y-offset2.y)/2-offset0.y));
     
     let cwidth = offset0.x;
     let cheight = offset1.y - offset0.y
