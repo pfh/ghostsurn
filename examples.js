@@ -45,29 +45,25 @@ let ghost_diagrams_raw = [
     "'  33Aa', ' 33 Aa'",
     //"'ab A  ', 'B  C  ', 'B  c  ', 'B  D  ', 'B  d  '",
     //"'d D 4 ', 'd  D  ', '44    '",
-    "'a  A 4', 'aA    ', '4     ', '4 4   '",
-    "'a  A 4', 'aA    ', '4     '",
     //"'3-3-2-', '3--2--', '1-----'",
-    "'   bB ', 'bAaB  ', 'aAaA  '",    
+    //"'   bB ', 'bAaB  ', 'aAaA  '",    
     "'B Aa  ', 'b  Aa '",
     //"'44    ', '11  4 '",
     //"' a  4 ', ' 4 4  ', '  A441'",
     "'1 1 1 ', '2  12 '",
-    "' AAaa ', 'a  A  '",
-    "' a A  ', 'Aaa  A'",
+    //"' a A  ', 'Aaa  A'",
     "'a  a  ', ' aAA A'",
     "'  AA A', 'a a a '",
     "'a  aa ', '    AA'",
     "'A A a ', 'a a   '",
     "'A A a ', 'a  a  '",
-    "' a   4', 'a4 44A', '4A    '",
-    "'a 2a2 ', ' A   A', '     2'",
-    "'141   ', '4  4  ', '1 1   '",
+    //"' a   4', 'a4 44A', '4A    '",
+    //"'141   ', '4  4  ', '1 1   '",
     "' Aaa  ', 'A1A   ', 'a 1AAa'",
-    "'  bB1 ', ' b  B '",
+    //"'  bB1 ', ' b  B '",
     "'BbB 1 ', '     b'",
     "'b  b b', '  BbB '",
-    "'aA1   ', '   AA ', 'a  2  '",
+    //"'aA1   ', '   AA ', 'a  2  '",
     "'212111', ' 1 2  '",
     "'22222a', '22 A22'",
     "'2 222 ', '2   B2', '  b  2'",
@@ -121,7 +117,14 @@ let ghost_diagrams_raw = [
     "'cC C', 'cc C'",
     "'c-C-', 'cC--'",
     //"'dd11', 'D-3-', '11--'",
-    "'3333', '3 1 ', '33  '" 
+    "'3333', '3 1 ', '33  '",
+    
+    
+    //Hard cases:
+    "'a  A 4', 'aA    ', '4     ', '4 4   '",
+    "'a  A 4', 'aA    ', '4     '",
+    "' AAaa ', 'a  A  '",
+    "'a 2a2 ', ' A   A', '     2'",
 ];
 
 let tile_examples = [
@@ -129,7 +132,7 @@ let tile_examples = [
     
     ["Feynman's van", "outlines=0&tile0=d-D-4-&pal0=%23fce94f&weight0=2&tile1=d--D--&pal1=%23d9138a&weight1=1&tile2=44----&pal2=%2312a4d9&weight2=1"],
     
-    ["DNA", "max_memory=1000000&effort=250&tile0=ab-A--&pal0=%239af4fa&weight0=1&tile1=B--C--&pal1=%2373d216&weight1=1&tile2=B--c--&pal2=%23cc0000&weight2=1&tile3=B--D--&pal3=%23000000&weight3=1&tile4=B--d--&pal4=%234453ff&weight4=1&tile5=------&pal5=%23fce94f&weight5=2"],
+    ["DNA", "max_memory=1000000&effort=250&tile0=ab-A--&pal0=%239af4fa&weight0=1&tile1=B--C--&pal1=%2373d216&weight1=1&tile2=B--c--&pal2=%23cc0000&weight2=1&tile3=B--D--&pal3=%23000000&weight3=1&tile4=B--d--&pal4=%234453ff&weight4=1"],
     
     ["Cells", "tile0=3-3-2-&pal0=%23fce94f&weight0=2.5&tile1=3--2--&pal1=%23d9138a&weight1=1.5&tile2=1-----&pal2=%2312a4d9&weight2=1"],
     
@@ -141,11 +144,21 @@ let tile_examples = [
     
     ["Batons", "tile0=b-4---&pal0=%23fce94f&weight0=1&tile1=3-----&pal1=%23d9138a&weight1=0.5&tile2=B---44&pal2=%2312a4d9&weight2=1&tile3=4--3--&pal3=%23000000&weight3=1&tile4=------&pal4=%23ffffff&weight4=0.5"],
     
-    ["Triangle net", "tile0=44----&pal0=%23fce94f&weight0=1&tile1=11--4-&pal1=%23d9138a&weight1=1.5"],
+    ["Triangles in the sea", "tile0=44----&pal0=%23fce94f&weight0=1&tile1=11--4-&pal1=%23d9138a&weight1=1.5"],
 
-    ["Different but connected", "tile0=C22222&pal0=%23fce94f&weight0=1&tile1=cC--22&pal1=%23d9138a&weight1=1&tile2=cc--2C&pal2=%2312a4d9&weight2=1&tile3=2-2---&pal3=%23000000&weight3=0.5&tile4=------&pal4=%23ffffff&weight4=0.5"],
+    ["Two houses", "bg=%23555753&tile0=C22222&pal0=%23fce94f&weight0=1.5&tile1=cC--22&pal1=%23d9138a&weight1=1&tile2=cc--2C&pal2=%2312a4d9&weight2=1&tile3=2-2---&pal3=%23ffffff&weight3=0.5&tile4=------&pal4=%23000000&weight4=0.5"],
     
     ["Snake puppets", "outlines=0&tile0=141---&pal0=%23fce94f&weight0=1&tile1=4--4--&pal1=%23d9138a&weight1=1.5&tile2=1-1---&pal2=%2312a4d9&weight2=1&tile3=------&pal3=%23000000&weight3=1"],
+    
+    ["Constellation", "tile0=---bB-&pal0=%23fce94f&weight0=1&tile1=bAaB--&pal1=%23d9138a&weight1=2&tile2=aAaA--&pal2=%2312a4d9&weight2=2&tile3=------&pal3=%23000000&weight3=1"],
+    
+    ["Grab a handle", "tile0=-a-A--&pal0=%23fce94f&weight0=1&tile1=Aaa--A&pal1=%23d9138a&weight1=2&tile2=------&pal2=%2312a4d9&weight2=1"],
+    
+    ["Flowers", "tile0=-a---4&pal0=%23fce94f&weight0=1&tile1=a4-44A&pal1=%23d9138a&weight1=2.5&tile2=4A----&pal2=%2312a4d9&weight2=1&tile3=------&pal3=%23000000&weight3=1"],
+    
+    ["Triangle net", "tile0=--bB1-&pal0=%23fce94f&weight0=3&tile1=-b--B-&pal1=%23d9138a&weight1=1&tile2=------&pal2=%2312a4d9&weight2=1"],
+
+    ["Crooked triangles", "tile0=aA1---&pal0=%23fce94f&weight0=2&tile1=---AA-&pal1=%23d9138a&weight1=1&tile2=a--2--&pal2=%2312a4d9&weight2=1&tile3=------&pal3=%23000000&weight3=1"],
 ];
 
 function ghost_diagrams_examples() {

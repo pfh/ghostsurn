@@ -1,87 +1,87 @@
 <!doctype html>
 <html lang=en>
 <meta charset=utf-8>
-
-<meta http-equiv="Cache-Control" content="no-store" />
-
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="icon" type="image/png" href="../favicon.png">
 <link rel="stylesheet" href="style.css">
 
 <title>ghostsurn tiles</title>
 
-<div style="float: right">
-<a href="https://github.com/pfh/ghostsurn">GitHub &rarr;</a>
-</div>
+<div class=grid>
+    <div class="controls">
 
-<h1>ghostsurn 0.2</h1>
+        <h1>ghostsurn 0.2.1</h1>
+        <div style="font-size: 75%">
+            <a href="https://github.com/pfh/ghostsurn">&rarr; GitHub</a>
+        </div>
+        <div>
+            <a class="switch" href="pixel.html">Pixels</a>
+            <a class="switch switch_active" href="tile.html">Tiles</a>
+        </div>
+        <div class=grid>
+            <div class=item>
+                Tiles <button onclick="more_tile_inputs()" title="add a tile">+</button>
+            </div>
+            <div class=item id=tile_area>
+                <div style="text-align: right; font-size: 75%;">Weight</div>
+            </div>
+            <div class=item>Background</div>
+            <div class=item><input type=color id=bg onchange="redraw()"></div>
+            <div class=item>Outlines</div>
+            <div class=item><input type=checkbox id=outlines oninput="redraw()"></div>
+            <div class=item>Expansion</div>
+            <div class=item>
+              <button onclick="inc_big('max_memory'); recompute();">+</button>
+              <button onclick="dec_big('max_memory'); recompute();">-</button>
+              <input type="text" id=max_memory oninput="recompute()">
+            </div>
+            <div class=item>Effort</div>
+            <div class=item>
+              <button onclick="inc_big('effort'); recompute();">+</button>
+              <button onclick="dec_big('effort'); recompute();">-</button>
+              <input type="text" id=effort oninput="recompute()">
+            </div>
+            <div class=item>Width</div>
+            <div class=item>
+              <button onclick="inc_small('width'); recompute();">+</button>
+              <button onclick="dec_small('width'); recompute();">-</button>
+              <input type="text" id=width oninput="recompute()">
+            </div>
+            <div class=item>Height</div>
+            <div class=item>
+              <button onclick="inc_small('height'); recompute();">+</button>
+              <button onclick="dec_small('height'); recompute();">-</button>
+              <input type="text" id=height oninput="recompute()">
+            </div>    
+            <div class=item>Scale</div>
+            <div class=item>
+              <button onclick="inc_small('scale'); redraw();">+</button>
+              <button onclick="dec_small('scale'); redraw();">-</button>
+              <input type="text" id=scale oninput="redraw()">
+            </div>
+            <div class=item></div>
+            <div class=item>
+              <button id=again onclick="recompute()" title="draw a new sample">Again</button>
+              <button id=randomize onclick="randomize()" title="apply variable reinforcement to the user">Randomize tiles</button>
+            </div>
+        </div>
+        
+        <div id=status class=status></div>
 
-<div class="controls">
-    <div>
-        <a class="switch" href="pixel.html">Pixels</a>
-        <a class="switch switch_active" href="tile.html">Tiles</a>
-    </div>
-    <div class=grid>
-        <div class=item>
-            Tiles <button onclick="more_tile_inputs()" title="add a tile">+</button>
-        </div>
-        <div class=item id=tile_area>
-            <div style="text-align: right; font-size: 75%;">Weight</div>
-        </div>
-        <div class=item>Background</div>
-        <div class=item><input type=color id=bg onchange="redraw()"></div>
-        <div class=item>Outlines</div>
-        <div class=item><input type=checkbox id=outlines oninput="redraw()"></div>
-        <div class=item>Width</div>
-        <div class=item>
-          <button onclick="inc_small('width'); recompute();">+</button>
-          <button onclick="dec_small('width'); recompute();">-</button>
-          <input type="text" id=width oninput="recompute()">
-        </div>
-        <div class=item>Height</div>
-        <div class=item>
-          <button onclick="inc_small('height'); recompute();">+</button>
-          <button onclick="dec_small('height'); recompute();">-</button>
-          <input type="text" id=height oninput="recompute()">
-        </div>    
-        <div class=item>Expansion</div>
-        <div class=item>
-          <button onclick="inc_big('max_memory'); recompute();">+</button>
-          <button onclick="dec_big('max_memory'); recompute();">-</button>
-          <input type="text" id=max_memory oninput="recompute()">
-        </div>
-        <div class=item>Effort</div>
-        <div class=item>
-          <button onclick="inc_big('effort'); recompute();">+</button>
-          <button onclick="dec_big('effort'); recompute();">-</button>
-          <input type="text" id=effort oninput="recompute()">
-        </div>
-        <div class=item>Scale</div>
-        <div class=item>
-          <button onclick="inc_small('scale'); redraw();">+</button>
-          <button onclick="dec_small('scale'); redraw();">-</button>
-          <input type="text" id=scale oninput="redraw()">
-        </div>
-        <div class=item></div>
-        <div class=item>
-          <button id=again onclick="recompute()" title="draw a new sample">Again</button>
-          <button id=randomize onclick="randomize()" title="apply variable reinforcement to the user">Randomize tiles</button>
+        <div style="max-width: 20em;">
+          <b>Examples</b><br/><br/>
+          <div id=examples></div>
         </div>
     </div>
     
-    <div id=status style="width: 17em; border: 1px solid #ddd; background: #f8f8f8; padding: 0.5em; min-height: 5em;"></div>
+    <div class="output item">
+        <div id=plot_container style="border: 1px solid white;">
+            <canvas id=plot></canvas>
+        </div>
+    </div>
 </div>
 
-<div class=output>
-  <canvas id=plot></canvas>
-</div>
-
-<div style="float: right; margin-top: 1em; max-width: 15em;">
-  <b>Examples</b><br/><br/>
-  <div id=examples></div>
-</div>
-
-<p style="clear: left;">
-This app lays out tiles based on an underlying square or hexagonal tiling pattern. Specify each tile using a 4 or 6 character string. The characters specify edges of the tiles. "AaBbCcDd" specify pointy edges. "A" connects to "a", etc. "1234" specify flat edges. These can connect to themselves. "-" is a blank edge, and behaves like a flat edge. 
+<p>This app lays out tiles based on an underlying square or hexagonal tiling pattern. Specify each tile using a 4 or 6 character string. The characters specify edges of the tiles. "AaBbCcDd" specify pointy edges. "A" connects to "a", etc. "1234" specify flat edges. These can connect to themselves. "-" is a blank edge, and behaves like a flat edge.</p>
 
 <script src=sampler.js></script>
 <script src=interface.js></script>
@@ -102,7 +102,7 @@ let n_tile_inputs = 0;
 
 function require_tile_inputs(n) {
     while(n_tile_inputs < n) {
-        get("tile_area").innerHTML += `<input type=text id=tile${n_tile_inputs} oninput="recompute()"> <input type=color id=pal${n_tile_inputs} onchange="redraw()"> <input type=text id=weight${n_tile_inputs} oninput="recompute()" style="width: 3em"><br>`;
+        get("tile_area").innerHTML += `<input type=text id=tile${n_tile_inputs} oninput="recompute()"> <input type=color id=pal${n_tile_inputs} onchange="redraw()"> <input type=text id=weight${n_tile_inputs} oninput="recompute()" style="width: 2em"><br>`;
         n_tile_inputs++;
     }
 }
@@ -206,10 +206,10 @@ function on_plot_mousedown(event) {
 }
 
 function more_tile_inputs() {
-   require_tile_inputs(n_tile_inputs+1);
+    require_tile_inputs(n_tile_inputs+1);
    
-   read_url();
-   redraw();
+    read_url();
+    redraw();
 }
 
 function redraw() {
@@ -234,14 +234,16 @@ function redraw() {
     
     if (result === null || result.words.length == 0) {
         let ctx = canvas.getContext("2d");
-        ctx.fillStyle = "#ffffff";
+        ctx.fillStyle = param.bg;
         ctx.fillRect(0,0,canvas.width,canvas.height);
+        reposition_plot_container();
         return;
     }
 
     let word = result.words[ get_random_choice(which, result.weights) ];
 
     draw_tile_layout(canvas, result.width, result.height, param.scale, word, param.tiles_spun, param.outlines, param.bg);
+    reposition_plot_container();
 }
 
 
@@ -329,6 +331,8 @@ get("plot").onmousedown = on_plot_mousedown;
 // Capture dpi changes due to zooming. Canvas will be redrawn appropriately.
 // Unfortunately this doesn't detect moving between hidpi/non-hidpi screens.
 window.onresize = redraw;
+
+window.onscroll = reposition_plot_container;
 
 window.onhashchange = () => { read_url(); recompute(); };
 
