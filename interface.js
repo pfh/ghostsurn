@@ -289,7 +289,7 @@ function reposition_plot_container() {
         Math.max(view_top, excess_height/2),
         Math.max(0,window.innerHeight-(plot.offsetTop+height-view_top-vv.height)));
     plot.style.marginTop = mt + "px";
-    //plot.style.marginBottom = Math.max(0, -mt) + "px";
+    plot.style.marginBottom = Math.max(0, -mt) + "px";
     
     //let ml = Math.min(0, Math.max(-plot.offsetLeft, -rect.left)) 
     //    + Math.max(0, window.innerWidth-width)
@@ -298,5 +298,5 @@ function reposition_plot_container() {
         + Math.max(0, vv.width-width)
         - excess_width/2;
     plot.style.marginLeft = ml + "px";
-    //plot.style.marginRight = Math.max(0, -ml) + "px";
+    plot.style.marginRight = Math.max(0, -ml) + "px";
 }
