@@ -265,21 +265,38 @@ function job(command, callback) {
 
 function reposition_plot_container() {
     let plot = get("plot_container");
-    plot.style.zIndex = -2;
-    //plot.style.position = "relative";
     plot.style.marginLeft = "0";
     plot.style.marginTop = "0";
-    let rect = plot.getBoundingClientRect();
-    let width = rect.right-rect.left;
-    let excess_width = Math.max(0, window.innerWidth-plot.offsetLeft-width);
-    let excess_height = Math.max(0, window.innerHeight+rect.top-rect.bottom);
-    plot.style.marginTop = Math.min(
+
+    let vv = window.visualViewport;
+    let view_left = window.scrollX + vv.offsetLeft;
+    let view_top = window.scrollY + vv.offsetTop;
+     
+    //let rect = plot.getBoundingClientRect();
+    let width = plot.offsetWidth; //rect.right-rect.left;
+    let height = plot.offsetHeight; //rect.right-rect.left;
+    //let excess_width = Math.max(0, window.innerWidth-plot.offsetLeft-width);
+    //let excess_height = Math.max(0, window.innerHeight+rect.top-rect.bottom);
+    let excess_width = Math.max(0, vv.width-plot.offsetLeft-width);
+    let excess_height = Math.max(0, vv.height-height);
+    
+    //let mt = Math.min(
+    //    plot.parentElement.offsetHeight-plot.offsetHeight,
+    //    Math.max(window.scrollY, excess_height/2),
+    //    Math.max(0,window.innerHeight-rect.bottom));
+    let mt = Math.min(
         plot.parentElement.offsetHeight-plot.offsetHeight,
-        Math.max(window.scrollY, excess_height/2),
-        Math.max(0,window.innerHeight-rect.bottom))+"px";
-    //plot.style.marginTop = excess_height/2+"px";
-    plot.style.marginLeft = 
-        Math.min(0, Math.max(-plot.offsetLeft, -rect.left)) 
-        + Math.max(0, window.innerWidth-width)
-        - excess_width/2+"px";
+        Math.max(view_top, excess_height/2),
+        Math.max(0,window.innerHeight-(plot.offsetTop+height-view_top-vv.height)));
+    plot.style.marginTop = mt + "px";
+    //plot.style.marginBottom = Math.max(0, -mt) + "px";
+    
+    //let ml = Math.min(0, Math.max(-plot.offsetLeft, -rect.left)) 
+    //    + Math.max(0, window.innerWidth-width)
+    //    - excess_width/2;
+    let ml = Math.min(0, Math.max(-plot.offsetLeft, -(plot.offsetLeft-view_left))) 
+        + Math.max(0, vv.width-width)
+        - excess_width/2;
+    plot.style.marginLeft = ml + "px";
+    //plot.style.marginRight = Math.max(0, -ml) + "px";
 }

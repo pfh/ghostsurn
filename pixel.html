@@ -436,6 +436,8 @@ get("plot").onmousedown = on_plot_mousedown;
 
 window.onresize = reposition_plot_container;
 window.onscroll = reposition_plot_container;
+window.visualViewport.onscroll = reposition_plot_container;
+window.visualViewport.resize = reposition_plot_container;
 
 window.onhashchange = () => { read_url(); recompute(); };
 
