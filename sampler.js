@@ -61,11 +61,10 @@ function get_weighted_samples(initial, n, choices, choice_weights, effort, get_a
         let new_weights = [ ];
         
         let todo = [ ];
-        //let part = Math.max(Math.max(...weights)*0.01, Math.min(...weights)); //!!!!!!!!!!!!!!!
         let part = Math.min(...weights);
         for(let j of range(words.length*n_choices)) {
             let weight = weights[j/n_choices>>0] * choice_weights[j%n_choices];
-            let n = Math.min(10, Math.floor(weight/part + Math.random())); //!!!!!!!!!!!!!!!!!!!!!!
+            let n = Math.min(10, Math.floor(weight/part + Math.random()));        // <- This number might need tuning?
             for(let k of range(n))
                 todo.push([j, weight/n]);
         }
