@@ -122,6 +122,7 @@ function make_edge(char, halfside) {
     let [width, dent] = edge_specs[char];    
     width *= halfside;
     dent *= halfside;
+    
     let a = 0;
     return [ xy(-width,a), xy(-width,1), xy(0, 1+dent/2), xy(width, 1), xy(width, a) ];
 }
@@ -184,7 +185,7 @@ function draw_tile(ctx, tile, x, y, scale, all_offset, border) {
     }
 }
 
-function draw_tile_layout(canvas, width, height, scale, word, tiles, do_outlines, bg_color) {
+function draw_tile_layout(canvas, width, height, scale, word, tiles, do_outlines, do_grid, bg_color) {
     let ctx = canvas.getContext("2d");
     
     let last_y = word.length/width-1;
@@ -210,7 +211,12 @@ function draw_tile_layout(canvas, width, height, scale, word, tiles, do_outlines
     
     ctx.fillStyle = bg_color;
     ctx.fillRect(0,0,canvas.width,canvas.height);
-    
+
+    if (do_grid)
+    for(let y of range(height))
+    for(let x of range(width))
+        draw_tile(ctx, {tile:n==4?"1111":"111111"}, x, y, scale, offset, true);
+        
     for(let y of range(height))
     for(let x of range(width))
     if (y*width+x < word.length)

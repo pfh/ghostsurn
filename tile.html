@@ -10,7 +10,7 @@
 <div class=grid>
     <div class="controls">
 
-        <h1>ghostsurn 0.2.1</h1>
+        <h1>ghostsurn 0.2.2</h1>
         <div style="font-size: 75%">
             <a href="https://github.com/pfh/ghostsurn">&rarr; GitHub</a>
         </div>
@@ -29,6 +29,8 @@
             <div class=item><input type=color id=bg onchange="redraw()"></div>
             <div class=item>Outlines</div>
             <div class=item><input type=checkbox id=outlines oninput="redraw()"></div>
+            <div class=item>Grid</div>
+            <div class=item><input type=checkbox id=grid oninput="redraw()"></div>
             <div class=item>Expansion</div>
             <div class=item>
               <button onclick="inc_big('max_memory'); recompute();">+</button>
@@ -125,6 +127,7 @@ function read_url() {
 
     get("bg").value = sp_get_str(sp, "bg", "#ffffff");
     get("outlines").checked = sp_get_int(sp, "outlines", 1) > 0;
+    get("grid").checked = sp_get_int(sp, "grid", 0) > 0;
     
     get("width").value = sp_get_int(sp, "width", 15);
     get("height").value = sp_get_int(sp, "height", 20);
@@ -148,6 +151,7 @@ function update_url() {
 
     sp.set("bg",param.bg);
     sp.set("outlines",param.outlines?1:0);
+    sp.set("grid",param.grid?1:0);
     sp.set("width",param.width);
     sp.set("height",param.height);
     sp.set("max_memory",param.max_memory);
@@ -171,6 +175,7 @@ function update_url() {
 function load_param() {
     param.bg = get("bg").value;
     param.outlines = get("outlines").checked;
+    param.grid = get("grid").checked;
     param.width = parse_int(get("width").value);
     param.height = parse_int(get("height").value);
     param.max_memory = parse_int(get("max_memory").value);
@@ -242,7 +247,7 @@ function redraw() {
 
     let word = result.words[ get_random_choice(which, result.weights) ];
 
-    draw_tile_layout(canvas, result.width, result.height, param.scale, word, param.tiles_spun, param.outlines, param.bg);
+    draw_tile_layout(canvas, result.width, result.height, param.scale, word, param.tiles_spun, param.outlines, param.grid, param.bg);
     reposition_plot_container();
 }
 

@@ -39,78 +39,6 @@ function get_random_choice(rand, probs) {
 
 
 
-function get_weighted_samples(initial, n, choices, choice_weights, effort, get_advancer, callback) {
-    let last_callback = Date.now();
-    let n_choices = choices.length;
-    let saturated = null;
-    
-    // Initial pool of samples contains the initial word
-    let words = [ initial ];
-    let weights = [ 1 ];
-
-    // Try extending each word in the pool by each of the possible choices.
-    // If valid extensions don't exceed effort, the new pool is exhaustive.
-    // Otherwise a random subset of valid extensions is kept.
-    for(let i of range(n)) {
-        //let todo = Array.from(range(words.length * n_choices));
-        //let todo_weights = todo.map(j => weights[j/n_choices>>0] * choice_weights[j%n_choices]);
-        
-        let advancer = get_advancer(i);
-
-        let new_words = [ ];
-        let new_weights = [ ];
-        
-        let todo = [ ];
-        let part = Math.min(...weights);
-        for(let j of range(words.length*n_choices)) {
-            let weight = weights[j/n_choices>>0] * choice_weights[j%n_choices];
-            let n = Math.min(10, Math.floor(weight/part + Math.random()));        // <- This number might need tuning?
-            for(let k of range(n))
-                todo.push([j, weight/n]);
-        }
-        shuffle(todo);
-        
-        let seen = new Map();
-        
-        //for(let [j, weight] of drop_all(todo, todo_weights)) {
-        for(let [j, weight] of todo) {
-            if (!seen.has(j)) {
-                let item = advancer(words[j/n_choices>>0], choices[j%n_choices]);
-                if (item === null) {
-                    seen.set(j, -1);
-                } else {
-                    seen.set(j, new_words.length);                
-                    new_words.push(item);
-                    new_weights.push(weight);
-                }
-            } else {            
-                let k = seen.get(j);
-                if (k >= 0)
-                    new_weights[k] += weight;
-            }
-            
-            if (new_words.length >= effort) break;
-        }
-        
-        if (saturated === null && new_words.length >= effort)
-            saturated = i;
-
-        words = new_words;
-        weights = new_weights;
-        
-        // Make weights add to 1 (and prevent floating point overflow)
-        let total = weights.reduce((a, b) => a + b, 0);
-        weights = weights.map(weight => weight/total);
-        
-        if (callback !== null && Date.now() > last_callback + 200) {
-            callback({words, weights, saturated});
-            last_callback = Date.now();
-        }
-    }
-
-    return {words, weights, saturated};
-}
-
 
 /* Sample a set of words produced by making [n] choices amongst [choices].
 
@@ -161,6 +89,89 @@ function get_samples(initial, n, choices, effort, get_advancer, callback) {
     }
 
     return {words, saturated};
+}
+
+
+/* Weighted version of get_samples. 
+ */
+function get_weighted_samples(initial, n, choices, choice_weights, effort, get_advancer, callback) {
+    let last_callback = Date.now();
+    let n_choices = choices.length;
+    let saturated = null;
+    
+    // Initial pool of samples contains the initial word
+    let words = [ initial ];
+    let weights = [ 1 ];
+
+    // Try extending each word in the pool by each of the possible choices.
+    // If valid extensions don't exceed effort, the new pool is exhaustive.
+    // Otherwise a random subset of valid extensions is kept.
+    for(let i of range(n)) {
+        let advancer = get_advancer(i);
+
+        let new_words = [ ];
+        let new_weights = [ ];
+        
+        let todo = [ ];
+        
+        // For each possible item (= pool item x choice), calculate it's weight.
+        // We divide then divide weight amonst some number of todo items.
+        // There are many possible choices for how many todo items to produce for each item.
+        // With a large enough pool, a good sample is produced, but some choices definitely work better than others.
+        //
+        // With the scheme below:
+        // - The todo list at most twice the size of the number of items.
+        // - Each item is present at least once.
+        // - A highly weighted item may be present up to [effort] times.
+        let part = 
+            (weights.reduce((a,b)=>a+b,0)/weights.length) *
+            (choice_weights.reduce((a,b)=>a+b,0)/n_choices);
+        for(let j of range(words.length*n_choices)) {
+            let weight = weights[j/n_choices>>0] * choice_weights[j%n_choices];
+            let n = Math.ceil(weight/part);
+            for(let k of range(n))
+                todo.push([j, weight/n]);
+        }
+        shuffle(todo);
+        
+        let seen = new Map();
+        
+        for(let [j, weight] of todo) {
+            if (!seen.has(j)) {
+                let item = advancer(words[j/n_choices>>0], choices[j%n_choices]);
+                if (item === null) {
+                    seen.set(j, -1);
+                } else {
+                    seen.set(j, new_words.length);                
+                    new_words.push(item);
+                    new_weights.push(weight);
+                }
+            } else {            
+                let k = seen.get(j);
+                if (k >= 0)
+                    new_weights[k] += weight;
+            }
+            
+            if (new_words.length >= effort) break;
+        }
+        
+        if (saturated === null && new_words.length >= effort)
+            saturated = i;
+
+        words = new_words;
+        weights = new_weights;
+        
+        // Make weights add to 1 (and prevent floating point overflow)
+        let total = weights.reduce((a, b) => a + b, 0);
+        weights = weights.map(weight => weight/total);
+        
+        if (callback !== null && Date.now() > last_callback + 200) {
+            callback({words, weights, saturated});
+            last_callback = Date.now();
+        }
+    }
+
+    return {words, weights, saturated};
 }
 
 
