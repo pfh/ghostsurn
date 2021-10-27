@@ -34,19 +34,24 @@ function xy(x,y) { return new XY(x,y); }
 
 
 const edge_specs = {
-    "A":[1,1.25],
-    "a":[1,-1.25],
-    "B":[0.5,1],
-    "b":[0.5,-1],
-    "C":[0.25,0.75],
-    "c":[0.25,-0.75],
-    "D":[0.1,0.5],
-    "d":[0.1,-0.5],
+    "A":[1,1.25,0],
+    "a":[1,-1.25,0],
+    "B":[0.5,1,0],
+    "b":[0.5,-1,0],
+    "C":[0.25,0.75,0],
+    "c":[0.25,-0.75,0],
+    "D":[0.1,0.5,0],
+    "d":[0.1,-0.5,0],
+
+    "E":[0.5,0,0.5],
+    "e":[0.5,0,-0.5],
+    "F":[0.25,0,0.75],
+    "f":[0.25,0,-0.75],
     
-    "1":[1,0],
-    "2":[0.5,0],
-    "3":[0.25,0],
-    "4":[0.1,0],
+    "1":[1,0,0],
+    "2":[0.5,0,0],
+    "3":[0.25,0,0],
+    "4":[0.1,0,0],
 };
 
 const edge_partners = {
@@ -63,6 +68,10 @@ const edge_partners = {
     "c":"C",
     "D":"d",
     "d":"D",
+    "E":"e",
+    "e":"E",
+    "F":"f",
+    "f":"F",
 };
 
 const adjacency_4 = [ 
@@ -119,12 +128,19 @@ function tile_weights(tiles) {
 
 
 function make_edge(char, halfside) {
-    let [width, dent] = edge_specs[char];    
+    let [width, dent, skew] = edge_specs[char];    
     width *= halfside;
     dent *= halfside;
+    skew *= halfside;
     
     let a = 0;
-    return [ xy(-width,a), xy(-width,1), xy(0, 1+dent/2), xy(width, 1), xy(width, a) ];
+    return [ 
+        xy(-width+skew,a), 
+        xy(-width+skew,1), 
+        xy(0+skew, 1+dent/2), 
+        xy(width+skew, 1), 
+        xy(width+skew, a) 
+    ];
 }
 
 function make_tile(tile) {

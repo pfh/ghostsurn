@@ -79,7 +79,7 @@ let ghost_diagrams_raw = [
     "'  cc c', ' C C c'",
     //"'AaAaaa', '  1 Aa', '     A'",
     "'d D 3 ', 'dD    ', '3     '",
-    "'a 1 A ', 'a  A  '",
+    //"'a 1 A ', 'a  A  '",
     "'cCCcCC', 'cccC  ', 'c C  C'",
     "'A44444', 'a4   4', '4 4   '",
     "'acaACA', 'acbBCB', 'bcaBCB', 'bcbACA'",
@@ -152,7 +152,7 @@ let tile_examples = [
     
     ["Snake puppets", "outlines=0&tile0=141---&pal0=%23fce94f&weight0=1&tile1=4--4--&pal1=%23d9138a&weight1=1.5&tile2=1-1---&pal2=%2312a4d9&weight2=1&tile3=------&pal3=%23000000&weight3=1"],
     
-    ["Constellation", "tile0=---bB-&pal0=%23fce94f&weight0=1&tile1=bAaB--&pal1=%23d9138a&weight1=2&tile2=aAaA--&pal2=%2312a4d9&weight2=2&tile3=------&pal3=%23000000&weight3=1"],
+    ["Constellation", "tile0=---eE-&pal0=%23fce94f&weight0=1&tile1=efFE--&pal1=%23d9138a&weight1=2&tile2=FfFf--&pal2=%2312a4d9&weight2=2&tile3=------&pal3=%23000000&weight3=1"],
     
     ["Grab a handle", "tile0=-a-A--&pal0=%23fce94f&weight0=1&tile1=Aaa--A&pal1=%23d9138a&weight1=2&tile2=------&pal2=%2312a4d9&weight2=1"],
     
@@ -169,6 +169,8 @@ let tile_examples = [
     ["One loop", "bg=%2329d68f&tile0=-a-A-a&pal0=%23ee9711&weight0=1&tile1=----A-&pal1=%238f29d6&weight1=1&tile2=------&pal2=%2312a4d9&weight2=3"],
     
     ["Isoforms", "tile0=--33Aa&pal0=%23fce94f&weight0=1&tile1=-33-Aa&pal1=%23d9138a&weight1=1&tile2=------&pal2=%2312a4d9&weight2=1"],
+    
+    ["Spokes", "bg=%23ffffff&outlines=1&grid=1&tile0=e-2-E-&pal0=%23babdb6&weight0=2&tile1=e--E--&pal1=%23555753&weight1=1&tile2=------&pal2=%2312a4d9&weight2=1"],
 ];
 
 

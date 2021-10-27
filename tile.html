@@ -83,7 +83,15 @@
     </div>
 </div>
 
-<p>This app lays out tiles based on an underlying square or hexagonal tiling pattern. Specify each tile using a 4 or 6 character string. The characters specify edges of the tiles. "AaBbCcDd" specify pointy edges. "A" connects to "a", etc. "1234" specify flat edges. These can connect to themselves. "-" is a blank edge, and behaves like a flat edge.</p>
+<p>This app lays out tiles based on an underlying square or hexagonal tiling pattern. Specify each tile using a 4 or 6 character string. The characters specify edges of the tiles.</p>
+
+<p>"AaBbCcDd" specify pointy edges. "A" connects to "a", etc.</p>
+
+<p>"EeFf" specify off-center flat edges. "E" connects to "e", etc.</p>
+
+<p>"1234" specify centered flat edges. These can connect to themselves.</p> 
+
+<p>"-" is an empty edge, and behaves like a flat edge.</p>
 
 <script src=sampler.js></script>
 <script src=interface.js></script>
