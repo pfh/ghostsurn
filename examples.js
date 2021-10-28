@@ -136,9 +136,9 @@ let ghost_diagrams_raw = [
 ];
 
 let tile_examples = [
-    ["Triangles", "bg=%23fce94f&tile0=AaAa--&pal0=%23ffffff&weight0=1&tile1=------&pal1=%23d9138a&weight1=1"],
+    ["Thesis", "bg=%23204a87&outlines=3&grid=1&tile0=---aA-&pal0=%238ae234&weight0=1&tile1=abBA--&pal1=%238ae234&weight1=3&tile2=BbBb--&pal2=%23fce94f&weight2=2&tile3=------&pal3=%23000000&weight3=1"],
 
-    ["Eastern windows", "tile0=dd22&pal0=%23fce94f&weight0=2&tile1=D-4-&pal1=%23d9138a&weight1=1&tile2=22--&pal2=%2312a4d9&weight2=1"],
+    ["Triangles", "bg=%23fce94f&tile0=AaAa--&pal0=%23ffffff&weight0=1&tile1=------&pal1=%23d9138a&weight1=1"],
     
     ["Feynman's van", "outlines=0&tile0=d-D-4-&pal0=%23fce94f&weight0=2&tile1=d--D--&pal1=%23d9138a&weight1=1&tile2=44----&pal2=%2312a4d9&weight2=1"],
     
@@ -146,9 +146,15 @@ let tile_examples = [
     
     ["Cells", "grid=1&tile0=3-3-2-&pal0=%23fce94f&weight0=2.5&tile1=3--2--&pal1=%23d9138a&weight1=1.5&tile2=1-----&pal2=%2312a4d9&weight2=1"],
     
-    ["Binary tree", "bg=%23d3d7cf&outlines=1&grid=1&tile0=4B4B&pal0=%23888a85&weight0=2&tile1=c-C-&pal1=%23d9138a&weight1=1&tile2=-bC-&pal2=%2312a4d9&weight2=1&tile3=cb-B&pal3=%23fce94f&weight3=1&tile4=----&pal4=%23ffffff&weight4=1"],
+    ["Knot", "bg=%23fce94f&outlines=3&tile0=BbBb&pal0=%23ffffff&weight0=1&tile1=B-b-&pal1=%23d9138a&weight1=1&tile2=Bb--&pal2=%2312a4d9&weight2=1"],
+    
+    ["Helix", "bg=%23fce94f&outlines=3&tile0=Bb-Bb-&pal0=%23ffffff&weight0=2&tile1=B--b--&pal1=%23d9138a&weight1=1&tile2=bB----&pal2=%2312a4d9&weight2=1"],
     
     ["Rectangles", "bg=%23c4a000&tile0=1444&pal0=%23fce94f&weight0=1&tile1=1111&pal1=%2375507b&weight1=1.5"],
+
+    ["Eastern windows", "tile0=dd22&pal0=%23fce94f&weight0=2&tile1=D-4-&pal1=%23d9138a&weight1=1&tile2=22--&pal2=%2312a4d9&weight2=1"],
+    
+    ["Binary counter", "bg=%23d3d7cf&outlines=1&grid=1&tile0=4B4B&pal0=%23888a85&weight0=2&tile1=c-C-&pal1=%23d9138a&weight1=1&tile2=-bC-&pal2=%2312a4d9&weight2=1&tile3=cb-B&pal3=%23fce94f&weight3=1&tile4=----&pal4=%23ffffff&weight4=1"],
     
     ["Society", "tile0=-a--4-&pal0=%23fce94f&weight0=1&tile1=-4-4--&pal1=%23d9138a&weight1=1&tile2=--A441&pal2=%2312a4d9&weight2=2&tile3=------&pal3=%23000000&weight3=1"],
     
@@ -160,7 +166,7 @@ let tile_examples = [
     
     ["Snake puppets", "outlines=0&tile0=141---&pal0=%23fce94f&weight0=1&tile1=4--4--&pal1=%23d9138a&weight1=1.5&tile2=1-1---&pal2=%2312a4d9&weight2=1&tile3=------&pal3=%23000000&weight3=1"],
     
-    ["Constellation", "tile0=---eE-&pal0=%23fce94f&weight0=1&tile1=efFE--&pal1=%23d9138a&weight1=2&tile2=FfFf--&pal2=%2312a4d9&weight2=2&tile3=------&pal3=%23000000&weight3=1"],
+    //["Constellation", "tile0=---eE-&pal0=%23fce94f&weight0=1&tile1=efFE--&pal1=%23d9138a&weight1=2&tile2=FfFf--&pal2=%2312a4d9&weight2=2&tile3=------&pal3=%23000000&weight3=1"],
     
     ["Grab a handle", "tile0=-a-A--&pal0=%23fce94f&weight0=1&tile1=Aaa--A&pal1=%23d9138a&weight1=2&tile2=------&pal2=%2312a4d9&weight2=1"],
     
@@ -179,13 +185,11 @@ let tile_examples = [
     ["Isoforms", "tile0=--33Aa&pal0=%23fce94f&weight0=1&tile1=-33-Aa&pal1=%23d9138a&weight1=1&tile2=------&pal2=%2312a4d9&weight2=1"],
     
     ["Spokes", "bg=%23ffffff&outlines=1&grid=1&tile0=e-2-E-&pal0=%23babdb6&weight0=2&tile1=e--E--&pal1=%23555753&weight1=1&tile2=------&pal2=%2312a4d9&weight2=1"],
-    
-    ["Knot", "bg=%23fce94f&outlines=3&tile0=BbBb&pal0=%23ffffff&weight0=1&tile1=B-b-&pal1=%23d9138a&weight1=1&tile2=Bb--&pal2=%2312a4d9&weight2=1"],
 ];
 
 
 function ghost_diagrams_examples() {
-    let result = tile_examples.slice();
+    let result = [ ];
     
     for(let i of range(ghost_diagrams_raw.length)) {
         let item = eval("["+ghost_diagrams_raw[i]+"]");

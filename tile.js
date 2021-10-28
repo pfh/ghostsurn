@@ -193,35 +193,37 @@ function draw_tile(ctx, tile, x, y, scale, all_offset, what) {
     p = p.map(points => points.map(point => point.add(offset).scale(scale).add(all_offset)));
     
     /* Main body */
-    ctx.beginPath();
-    ctx.moveTo(p[0][1].x,p[0][1].y);
-    for(let i=0;i<p.length;i++) {
-        let j=(i+1)%p.length;
-        ctx.lineTo(p[i][2].x,p[i][2].y);
-        ctx.lineTo(p[i][3].x,p[i][3].y);
+    if (what == "fill" || what == "border") {
+        ctx.beginPath();
+        ctx.moveTo(p[0][1].x,p[0][1].y);
+        for(let i=0;i<p.length;i++) {
+            let j=(i+1)%p.length;
+            ctx.lineTo(p[i][2].x,p[i][2].y);
+            ctx.lineTo(p[i][3].x,p[i][3].y);
+            
+            let a=p[i][3], b=p[i][4], c=p[j][0], d=p[j][1];
+            let l = d.sub(a).length() * 0.4;
+            b = b.sub(a);
+            b = b.scale(l/b.length()).add(a);
+            c = c.sub(d);
+            c = c.scale(l/c.length()).add(d);
+            ctx.bezierCurveTo(b.x,b.y,c.x,c.y,d.x,d.y);
+        }
+        ctx.closePath();
         
-        let a=p[i][3], b=p[i][4], c=p[j][0], d=p[j][1];
-        let l = d.sub(a).length() * 0.4;
-        b = b.sub(a);
-        b = b.scale(l/b.length()).add(a);
-        c = c.sub(d);
-        c = c.scale(l/c.length()).add(d);
-        ctx.bezierCurveTo(b.x,b.y,c.x,c.y,d.x,d.y);
-    }
-    ctx.closePath();
+        if (what == "fill") {
+            ctx.fillStyle = tile.color;
+            ctx.strokeStyle = tile.color;
+            ctx.lineWidth = 0.75;
+            ctx.fill();
+            ctx.stroke();
+        }
 
-    if (what == "border") {
-        ctx.strokeStyle = "#000000";
-        ctx.lineWidth = 1.5;
-        ctx.stroke();
-    } 
-    
-    if (what == "fill") {
-        ctx.fillStyle = tile.color;
-        ctx.strokeStyle = tile.color;
-        ctx.lineWidth = 0.75;
-        ctx.fill();
-        ctx.stroke();
+        if (what == "border") {
+            ctx.strokeStyle = "#000000";
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+        } 
     }
 
     if (what == "knotlines") {
