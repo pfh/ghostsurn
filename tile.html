@@ -27,10 +27,17 @@
             </div>
             <div class=item>Background</div>
             <div class=item><input type=color id=bg onchange="redraw()"></div>
-            <div class=item>Outlines</div>
-            <div class=item><input type=checkbox id=outlines oninput="redraw()"></div>
             <div class=item>Grid</div>
             <div class=item><input type=checkbox id=grid oninput="redraw()"></div>
+            <div class=item>Style</div>
+            <div class=item>
+                <select id=outlines oninput="redraw()">
+                    <option value=0>Only colors</option>
+                    <option value=1>Tiles outlined</option>
+                    <option value=2>Border outlined</option>
+                    <option value=3>Knotwork</option>
+                </select>
+            </div>
             <div class=item>Expansion</div>
             <div class=item>
               <button onclick="inc_big('max_memory'); recompute();">+</button>
@@ -134,7 +141,7 @@ function read_url() {
     require_tile_inputs(n);
 
     get("bg").value = sp_get_str(sp, "bg", "#ffffff");
-    get("outlines").checked = sp_get_int(sp, "outlines", 1) > 0;
+    get("outlines").value = sp_get_int(sp, "outlines", 1);
     get("grid").checked = sp_get_int(sp, "grid", 0) > 0;
     
     get("width").value = sp_get_int(sp, "width", 15);
@@ -158,7 +165,7 @@ function update_url() {
     let sp = new URLSearchParams();
 
     sp.set("bg",param.bg);
-    sp.set("outlines",param.outlines?1:0);
+    sp.set("outlines",param.outlines);
     sp.set("grid",param.grid?1:0);
     sp.set("width",param.width);
     sp.set("height",param.height);
@@ -182,7 +189,7 @@ function update_url() {
 
 function load_param() {
     param.bg = get("bg").value;
-    param.outlines = get("outlines").checked;
+    param.outlines = parseInt(get("outlines").value);
     param.grid = get("grid").checked;
     param.width = parse_int(get("width").value);
     param.height = parse_int(get("height").value);
@@ -201,7 +208,7 @@ function load_param() {
         param.tiles.pop();
         
     param.tiles_processed = param.tiles.filter(tile => tile.tile.length>0);
-    param.tiles_spun = spin_tiles(param.tiles_processed);
+    param.tiles_spun = spin_tiles(param.tiles_processed, param.outlines == 3);
 }
 
 

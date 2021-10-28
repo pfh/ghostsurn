@@ -1,5 +1,7 @@
 
-let examples = [
+let examples = [    
+    ["Knots", "rotation=90&pattern=20%7C16%7C22222222222222222222222222222222222222222222222222222000022222200000222201111022220111110222012210222201222102220122102222012221022233221022220111310300011110222220003013111000022222222220122233222222222222201222102222222222222012221022222222222220111110222222222222220000022222222222222222222222222222222222222222222222&mask=5%7C5%7C0000001110011100000000000&pal0=%23fce94f&pal1=%23edd400&pal2=%23005130&pal3=%23000000&pal4=%23729fcf&weight0=1&weight1=1&weight2=1&weight3=1.8&weight4=1"],
+    
     ["Bursts","rotation=90&pattern=6%7C6%7C_1211_112111222000110200110011_1001_&mask=5%7C5%7C0000000100011100010000000&pal0=%23fce94f&pal1=%23d9138a&pal2=%2312a4d9&pal3=%23000000&pal4=%23ffffff"],
     
     ["Curls","rotation=90&pattern=6%7C6%7C100102111100001210020111210000221210&mask=5%7C5%7C0000000100011100010000000&pal0=%23eeffff&pal1=%23204a87&pal2=%2373d216&pal3=%23000000&pal4=%23ffffff"],
@@ -40,6 +42,8 @@ let examples = [
     ["Seaweed", "rotation=&pattern=10%7C6%7C222222222222422224222244224422222444422222224422222222442222&mask=5%7C5%7C0000001110011100000000000&pal0=%23fce94f&pal1=%23d9138a&pal2=%232f8b6e&pal3=%23486490&pal4=%2372fa78"],
 
     ["Suspicious", "rotation=&pattern=5%7C7%7C11111100211002112221122211212111111&mask=5%7C5%7C0000001100011000000000000&pal0=%23eeffff&pal1=%23204a87&pal2=%2373d216&pal3=%23000000&pal4=%23ffffff"],
+    
+    ["Swirls", "rotation=180&pattern=10%7C11%7C11111111111111111111000000011111111101111100010111110101011111010001111101111111110000000011111111111111111111&mask=5%7C5%7C0000001110011100111000000&pal0=%23eeffff&pal1=%23204a87&pal2=%2373d216&pal3=%23000000&pal4=%23ffffff"],
 ];
 
 
@@ -152,7 +156,7 @@ let tile_examples = [
     
     ["Triangles in the sea", "bg=%23204a87&outlines=0&grid=1&tile0=44----&pal0=%23fce94f&weight0=1&tile1=11--4-&pal1=%23d9138a&weight1=1.5"],
 
-    ["Two houses", "bg=%23555753&tile0=C22222&pal0=%23fce94f&weight0=1.5&tile1=cC--22&pal1=%23d9138a&weight1=1&tile2=cc--2C&pal2=%2312a4d9&weight2=1&tile3=2-2---&pal3=%23ffffff&weight3=0.5&tile4=------&pal4=%23000000&weight4=0.5"],
+    ["Two houses", "bg=%23555753&outlines=3&tile0=C22222&pal0=%23fce94f&weight0=1.5&tile1=cC--22&pal1=%23d9138a&weight1=1&tile2=cc--2C&pal2=%2312a4d9&weight2=1&tile3=2-2---&pal3=%23ffffff&weight3=0.5&tile4=------&pal4=%23000000&weight4=0.5"],
     
     ["Snake puppets", "outlines=0&tile0=141---&pal0=%23fce94f&weight0=1&tile1=4--4--&pal1=%23d9138a&weight1=1.5&tile2=1-1---&pal2=%2312a4d9&weight2=1&tile3=------&pal3=%23000000&weight3=1"],
     
@@ -175,6 +179,8 @@ let tile_examples = [
     ["Isoforms", "tile0=--33Aa&pal0=%23fce94f&weight0=1&tile1=-33-Aa&pal1=%23d9138a&weight1=1&tile2=------&pal2=%2312a4d9&weight2=1"],
     
     ["Spokes", "bg=%23ffffff&outlines=1&grid=1&tile0=e-2-E-&pal0=%23babdb6&weight0=2&tile1=e--E--&pal1=%23555753&weight1=1&tile2=------&pal2=%2312a4d9&weight2=1"],
+    
+    ["Knot", "bg=%23fce94f&outlines=3&tile0=BbBb&pal0=%23ffffff&weight0=1&tile1=B-b-&pal1=%23d9138a&weight1=1&tile2=Bb--&pal2=%2312a4d9&weight2=1"],
 ];
 
 

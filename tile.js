@@ -87,12 +87,32 @@ const adjacency_6 = [
 ];
 const step_6 = { x:xy(2,0).rot(-30), y:xy(0,2) };
 
-function spin_tiles(input) {
+function spin_tiles(input, knotwork) {
     let tiles = [ ];
     for(let tile of input) {
         let seen = new Set();
+        
+        let ind = Array.from(range(tile.tile.length)).filter(i => tile.tile[i] != "-");
+        let knotstack;
+        if (!knotwork || ind.length != 4)
+            knotstack = [ tile.tile ];
+        else
+            knotstack = [
+                tile.tile.slice(0,ind[0])+"-"+tile.tile.slice(ind[0]+1,ind[2])+"-"+tile.tile.slice(ind[2]+1),
+                tile.tile.slice(0,ind[1])+"-"+tile.tile.slice(ind[1]+1,ind[3])+"-"+tile.tile.slice(ind[3]+1),
+            ];
+        
+        // Hack for this one case that doesn't draw nicely!
+        if (knotwork && tile.tile.length == 6)
+            knotstack = knotstack.map(item => item.replace(/[Aa]/g,"1"));
+        
         for(let i of range(tile.tile.length)) {
-            let spun = {...tile, tile:tile.tile.slice(i,tile.length)+tile.tile.slice(0,i)};
+            let spun = {
+                ...tile, 
+                spin:i,
+                tile:tile.tile.slice(i)+tile.tile.slice(0,i),
+                knotstack:knotstack.map(item => item.slice(i)+item.slice(0,i)),
+            };
             if (seen.has(spun.tile)) continue;
             tiles.push(spun);
             seen.add(spun.tile);
@@ -154,7 +174,7 @@ function make_tile(tile) {
     return points;
 }
 
-function draw_tile(ctx, tile, x, y, scale, all_offset, border) {
+function draw_tile(ctx, tile, x, y, scale, all_offset, what) {
     let n = tile.tile.length;
     let step = n==4?step_4:step_6;
 
@@ -172,6 +192,7 @@ function draw_tile(ctx, tile, x, y, scale, all_offset, border) {
     
     p = p.map(points => points.map(point => point.add(offset).scale(scale).add(all_offset)));
     
+    /* Main body */
     ctx.beginPath();
     ctx.moveTo(p[0][1].x,p[0][1].y);
     for(let i=0;i<p.length;i++) {
@@ -188,20 +209,43 @@ function draw_tile(ctx, tile, x, y, scale, all_offset, border) {
         ctx.bezierCurveTo(b.x,b.y,c.x,c.y,d.x,d.y);
     }
     ctx.closePath();
-    if (border) {
+
+    if (what == "border") {
         ctx.strokeStyle = "#000000";
         ctx.lineWidth = 1.5;
         ctx.stroke();
-    } else {
+    } 
+    
+    if (what == "fill") {
         ctx.fillStyle = tile.color;
         ctx.strokeStyle = tile.color;
         ctx.lineWidth = 0.75;
         ctx.fill();
         ctx.stroke();
     }
+
+    if (what == "knotlines") {
+        ctx.strokeStyle = "#000000";
+        ctx.lineWidth = 1.5;
+        ctx.lineCap = "round";
+        for(let i=0;i<p.length;i++) {
+            let j=(i+1)%p.length;
+            
+            let a=p[i][3], b=p[i][4], c=p[j][0], d=p[j][1];
+            let l = d.sub(a).length() * 0.4;
+            b = b.sub(a);
+            b = b.scale(l/b.length()).add(a);
+            c = c.sub(d);
+            c = c.scale(l/c.length()).add(d);
+            ctx.beginPath();
+            ctx.moveTo(a.x,a.y);
+            ctx.bezierCurveTo(b.x,b.y,c.x,c.y,d.x,d.y);
+            ctx.stroke();
+        }
+    }
 }
 
-function draw_tile_layout(canvas, width, height, scale, word, tiles, do_outlines, do_grid, bg_color) {
+function draw_tile_layout(canvas, width, height, scale, word, tiles, outlines, do_grid, bg_color) {
     let ctx = canvas.getContext("2d");
     
     let last_y = word.length/width-1;
@@ -231,17 +275,31 @@ function draw_tile_layout(canvas, width, height, scale, word, tiles, do_outlines
     if (do_grid)
     for(let y of range(height))
     for(let x of range(width))
-        draw_tile(ctx, {tile:n==4?"1111":"111111"}, x, y, scale, offset, true);
+        draw_tile(ctx, {tile:n==4?"1111":"111111"}, x, y, scale, offset, "border");
         
-    for(let y of range(height))
-    for(let x of range(width))
-    if (y*width+x < word.length)
-        draw_tile(ctx, tiles[ word[y*width+x].codePointAt() ], x, y, scale, offset, false);
-    
-    if (do_outlines) {
+    for(let i of [0,1]) {
         for(let y of range(height))
         for(let x of range(width))
-        if (y*width+x < word.length)
-            draw_tile(ctx, tiles[ word[y*width+x].codePointAt() ], x, y, scale, offset, true);
+        if (y*width+x < word.length) {
+            let tile = tiles[ word[y*width+x].codePointAt() ];
+            if (tile.knotstack.length > i) {
+                draw_tile(ctx, {...tile, tile:tile.knotstack[i]}, x, y, scale, offset, "fill");
+            }
+        }
+        
+        if (outlines > 0)
+        for(let y of range(height))
+        for(let x of range(width))
+        if (y*width+x < word.length) {
+            let tile = tiles[ word[y*width+x].codePointAt() ];
+            
+            // One weird case where borders aren't nice
+            if (tile.tile == "1111" && outlines == 3) 
+                continue;
+            
+            if (tile.knotstack.length > i) {
+                draw_tile(ctx, {...tile, tile:tile.knotstack[i]}, x, y, scale, offset, outlines==1?"border":"knotlines");
+            }
+        }
     }
 }
