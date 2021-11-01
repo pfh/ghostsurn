@@ -320,23 +320,31 @@ function recompute() {
 
 
 function randomize() {
-    let ind = [ ];
-    for(let i of range(param.tiles.length))
-    if (param.tiles[i].tile.length > 0)
-        ind.push(i);
-    
-    if (ind.length == 0) return;
-    
-    let pool = Array.from(ind.map(i=>param.tiles[i].tile).join(""));
-    shuffle(pool);
-    
-    for(let i of ind) {
-        let newtile = "";
-        for(let c of param.tiles[i].tile)
-            newtile += pool.pop();
-        param.tiles[i].tile = newtile;
+    for(let tries of range(100)) {
+        let ind = [ ];
+        for(let i of range(param.tiles.length))
+        if (param.tiles[i].tile.length > 0)
+            ind.push(i);
+        
+        if (ind.length == 0) return;
+        
+        let pool = Array.from(ind.map(i=>param.tiles[i].tile).join(""));
+        shuffle(pool);
+        
+        for(let i of ind) {
+            let newtile = "";
+            for(let c of param.tiles[i].tile)
+                newtile += pool.pop();
+            param.tiles[i].tile = newtile;
+        }
+        
+        if (param.outlines != 3) break;
+        
+        //Check if there is a knotwork crossover.
+        if (param.tiles.filter(tile => Array.from(tile.tile).filter(char => char != "-").length == 4).length)
+            break;
     }
-    
+      
     update_url();
     read_url();
     recompute();

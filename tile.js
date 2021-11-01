@@ -45,8 +45,8 @@ const edge_specs = {
 
     "E":[0.5,0,0.5],
     "e":[0.5,0,-0.5],
-    "F":[0.25,0,0.75],
-    "f":[0.25,0,-0.75],
+    "F":[0.25,0,0.25],
+    "f":[0.25,0,-0.25],
     
     "1":[1,0,0],
     "2":[0.5,0,0],
@@ -213,9 +213,10 @@ function draw_tile(ctx, tile, x, y, scale, all_offset, what) {
         
         if (what == "fill") {
             ctx.fillStyle = tile.color;
+            ctx.fill();
+
             ctx.strokeStyle = tile.color;
             ctx.lineWidth = 0.75;
-            ctx.fill();
             ctx.stroke();
         }
 
@@ -229,7 +230,6 @@ function draw_tile(ctx, tile, x, y, scale, all_offset, what) {
     if (what == "knotlines") {
         ctx.strokeStyle = "#000000";
         ctx.lineWidth = 1.5;
-        ctx.lineCap = "round";
         for(let i=0;i<p.length;i++) {
             let j=(i+1)%p.length;
             
@@ -249,6 +249,9 @@ function draw_tile(ctx, tile, x, y, scale, all_offset, what) {
 
 function draw_tile_layout(canvas, width, height, scale, word, tiles, outlines, do_grid, bg_color) {
     let ctx = canvas.getContext("2d");
+
+    ctx.lineJoin = "miter";
+    ctx.lineCap = "round";
     
     let last_y = word.length/width-1;
     
@@ -264,7 +267,7 @@ function draw_tile_layout(canvas, width, height, scale, word, tiles, outlines, d
     
     let cwidth = offset0.x;
     let cheight = offset1.y - offset0.y
-    let cscale = window.devicePixelRatio;
+    let cscale = Math.max(2, window.devicePixelRatio);  // Force high quality rendering
     canvas.style.width = cwidth+"px";
     canvas.style.height = cheight+"px";
     canvas.width = (cwidth*cscale)>>0;
