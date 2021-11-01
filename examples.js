@@ -185,6 +185,8 @@ let tile_examples = [
     ["Isoforms", "tile0=--33Aa&pal0=%23fce94f&weight0=1&tile1=-33-Aa&pal1=%23d9138a&weight1=1&tile2=------&pal2=%2312a4d9&weight2=1"],
     
     ["Spokes", "bg=%23ffffff&outlines=1&grid=1&tile0=e-2-E-&pal0=%23babdb6&weight0=2&tile1=e--E--&pal1=%23555753&weight1=1&tile2=------&pal2=%2312a4d9&weight2=1"],
+
+    ["Script", "bg=%23396875&outlines=3&tile0=BdBd&pal0=%23ffffff&weight0=2&tile1=B-b-&pal1=%23ffffff&weight1=1&tile2=Bd--&pal2=%23ffffff&weight2=1&tile3=----&pal3=%238e8e8e&weight3=1&tile4=D-d-&pal4=%23ffffff&weight4=1&tile5=Db--&pal5=%23ffffff&weight5=1&tile6=d---&pal6=%23d9138a&weight6=1&tile7=DbDb&pal7=%23ffffff&weight7=2"],
 ];
 
 
