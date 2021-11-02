@@ -262,17 +262,18 @@ function job(command, callback) {
 }
 
 
-
 function reposition_plot_container() {
+    let controls = get("controls");
     let plot = get("plot_container");
+    let parent = plot.parentElement;
     
-    plot.style.marginLeft = "0";
-    plot.style.marginRight = "0";
-    plot.style.marginTop = "0";
-    plot.style.marginBottom = "0";
+    plot.style.position = "fixed";
+    
+    parent.style.width = plot.offsetWidth+"px";
+    parent.style.height = plot.offsetHeight+"px";
     
     let left = plot.parentElement.offsetLeft;
-    let parent_height = plot.parentElement.offsetHeight;
+    let parent_height = Math.max(controls.offsetHeight, plot.offsetHeight);//parent.offsetHeight;
 
     let vv = window.visualViewport;
     let view_left = window.scrollX + vv.offsetLeft;
@@ -285,13 +286,15 @@ function reposition_plot_container() {
     
     let mt = Math.min(
         parent_height-height,
-        Math.max(excess_height/2, view_top+vv.height-Math.max(vv.height, height)),
+        excess_height/2 + Math.max(0, view_top+vv.height-Math.max(vv.height, height)),
     );
-    plot.style.marginTop = mt + "px";
+    //plot.style.marginTop = mt + "px";
+    plot.style.top = mt - window.scrollY + "px";
 
     let ml = Math.min(0, Math.max(-left, -(left-view_left))) 
         + Math.max(0, vv.width-width)
         - Math.min(excess_width,Math.max(0, (vv.width-width)*0.5));
-    plot.style.marginLeft = ml + "px";
-    plot.style.marginRight = Math.max(0, -ml) + "px";
+    //plot.style.marginLeft = ml + "px";
+    //plot.style.marginRight = Math.max(0, -ml) + "px";
+    plot.style.left = controls.offsetWidth + ml - window.scrollX + "px";
 }

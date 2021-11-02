@@ -25,7 +25,7 @@ body {
 .controls {
     margin: 0em;
     padding: 1em 1em 1em 1em; 
-    background: #ffffff88;
+    background: linear-gradient(to right, #ffffffff, #ffffff00);
     
     position: relative;
     z-index: 1;

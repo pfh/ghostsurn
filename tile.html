@@ -8,9 +8,9 @@
 <title>ghostsurn tiles</title>
 
 <div class=grid>
-    <div class="controls">
+    <div id=controls class=controls>
 
-        <h1>ghostsurn 0.2.3</h1>
+        <h1>ghostsurn 0.2.4</h1>
         <div style="font-size: 75%">
             <a href="https://github.com/pfh/ghostsurn">&rarr; GitHub</a>
         </div>
@@ -234,6 +234,7 @@ function more_tile_inputs() {
     redraw();
 }
 
+
 function redraw() {
     load_param();
     update_url();
@@ -361,6 +362,11 @@ for(let [name,url] of ghost_diagrams_examples()) {
 }
 
 get("plot").onmousedown = on_plot_mousedown;
+
+
+
+
+
 
 // Capture dpi changes due to zooming. Canvas will be redrawn appropriately.
 // Unfortunately this doesn't detect moving between hidpi/non-hidpi screens.
