@@ -137,7 +137,9 @@ let ghost_diagrams_raw = [
     "'a 2a2 ', ' A   A', '     2'",
 ];
 
-let tile_examples = [
+let tile_examples = [    
+    ["Helix", "bg=%23fce94f&outlines=3&tile0=Bb-Bb-&pal0=%23ffffff&weight0=2&tile1=B--b--&pal1=%23d9138a&weight1=1&tile2=bB----&pal2=%2312a4d9&weight2=1"],
+    
     ["Thesis", "bg=%23204a87&outlines=3&grid=1&tile0=---aA-&pal0=%238ae234&weight0=1&tile1=abBA--&pal1=%238ae234&weight1=3&tile2=BbBb--&pal2=%23fce94f&weight2=2&tile3=------&pal3=%23000000&weight3=1"],
 
     ["Triangles", "bg=%23fce94f&tile0=AaAa--&pal0=%23ffffff&weight0=1&tile1=------&pal1=%23d9138a&weight1=1"],
@@ -149,8 +151,6 @@ let tile_examples = [
     ["Cells", "grid=1&tile0=3-3-2-&pal0=%23fce94f&weight0=2.5&tile1=3--2--&pal1=%23d9138a&weight1=1.5&tile2=1-----&pal2=%2312a4d9&weight2=1"],
     
     ["Knot", "bg=%23fce94f&outlines=3&tile0=BbBb&pal0=%23ffffff&weight0=1&tile1=B-b-&pal1=%23d9138a&weight1=1&tile2=Bb--&pal2=%2312a4d9&weight2=1"],
-    
-    ["Helix", "bg=%23fce94f&outlines=3&tile0=Bb-Bb-&pal0=%23ffffff&weight0=2&tile1=B--b--&pal1=%23d9138a&weight1=1&tile2=bB----&pal2=%2312a4d9&weight2=1"],
     
     ["Rectangles", "bg=%23c4a000&tile0=1444&pal0=%23fce94f&weight0=1&tile1=1111&pal1=%2375507b&weight1=1.5"],
 

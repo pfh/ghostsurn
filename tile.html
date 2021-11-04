@@ -153,7 +153,7 @@ function read_url() {
     get("scale").value = sp_get_int(sp, "scale", 30);
     
     let default_palette = [
-        "#fce94f", "#d9138a", "#12a4d9", "#000000", "#ffffff"
+        "#fce94f", "#d9138a", "#12a4d9", "#666666", "#ffffff"
     ];
     for(let i of range(n_tile_inputs)) {
         get("tile"+i).value = sp_get_str(sp, "tile"+i, "");
