@@ -290,6 +290,11 @@ function recompute() {
         bad = true;
     }
     
+    if (!bad && param.tiles_spun.filter(tile => !(tile.weight>0)).length) {
+        compute_comment = "Weights should be positive."
+        bad = true;
+    }
+    
     if (!bad)
     for(let char of param.tiles_spun.map(tile=>tile.tile).join(""))
     if (!edge_partners.hasOwnProperty(char)) {

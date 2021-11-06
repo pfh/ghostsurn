@@ -164,6 +164,8 @@ let pattern = new Click_map(
 let mask = new Click_map(
     "mask", null, "01", {"0":"#cccccc","1":"black"}, null, null);
 
+let compute_comment = "";
+
 function read_url() {
     let sp = location.hash.slice(1);
 
@@ -286,7 +288,9 @@ function redraw() {
     update_url();
     
     let status = "";
-    if (result !== null && result.finished && result.words.length == 0)
+    if (compute_comment != "")
+        status = compute_comment;
+    else if (result !== null && result.finished && result.words.length == 0)
         status = `Failed to find a layout.`;
     else if (result !== null && result.finished)
         status = `Success.`;
@@ -347,6 +351,19 @@ function get_rotations(pic, rotation) {
 function recompute() {
     load_param();
     result = null;
+    
+    let bad = false;
+    compute_comment = "";
+    if (!bad && Object.values(param.weights).filter(weight => !(weight>0)).length) {
+        compute_comment = "Weights should be positive.";
+        bad = true;
+    }
+    
+    if (bad) {
+        stop_job();
+        redraw();
+        return;
+    }
     
     let maskpics = get_rotations(mask.pic, param.rotation);
     let patpics = get_rotations(pattern.pic, param.rotation);    

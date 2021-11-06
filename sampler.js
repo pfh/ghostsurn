@@ -108,54 +108,56 @@ function get_weighted_samples(initial, n, choices, choice_weights, effort, get_a
     // Otherwise a random subset of valid extensions is kept.
     for(let i of range(n)) {
         let advancer = get_advancer(i);
-
-        let new_words = [ ];
-        let new_weights = [ ];
         
-        let todo = [ ];
-        
-        // For each possible item (= pool item x choice), calculate it's weight.
-        // We divide then divide weight amonst some number of todo items.
-        // There are many possible choices for how many todo items to produce for each item.
-        // With a large enough pool, a good sample is produced, but some choices definitely work better than others.
-        //
-        // With the scheme below:
-        // - The todo list at most twice the size of the number of items.
-        // - Each item is present at least once.
-        // - A highly weighted item may be present up to [effort] times.
         let part = 
             (weights.reduce((a,b)=>a+b,0)/weights.length) *
             (choice_weights.reduce((a,b)=>a+b,0)/n_choices);
-        for(let j of range(words.length*n_choices)) {
+        
+        // Notionally each todo item is a regularly spaced sequence of points on a time-line
+        // starting as todo_starts and with interval 1/todo_weights.    
+        let todo = Array.from(range(words.length*n_choices));
+        let todo_weights = [ ];
+        let todo_starts = [ ]
+        for(let j of todo) {
             let weight = weights[j/n_choices>>0] * choice_weights[j%n_choices];
-            let n = Math.ceil(weight/part);
-            for(let k of range(n))
-                todo.push([j, weight/n]);
+            todo_weights[j] = weight;
+            todo_starts[j] = Math.random()/weight;
         }
-        shuffle(todo);
         
-        let seen = new Map();
-        
-        for(let [j, weight] of todo) {
-            if (!seen.has(j)) {
-                let item = advancer(words[j/n_choices>>0], choices[j%n_choices]);
-                if (item === null) {
-                    seen.set(j, -1);
-                } else {
-                    seen.set(j, new_words.length);                
-                    new_words.push(item);
-                    new_weights.push(weight);
-                }
-            } else {            
-                let k = seen.get(j);
-                if (k >= 0)
-                    new_weights[k] += weight;
+        // We will visit todo items in order of their first instance with time>0
+        todo.sort( (a,b) => todo_starts[a]-todo_starts[b] );
+
+        let new_words = [ ];
+        let new_index = [ ];
+
+        let end = -1;        
+        for(let j of todo) {
+            if (new_words.length >= effort) {
+                // Sampling ends at this time
+                end = todo_starts[j];
+                break;
             }
             
-            if (new_words.length >= effort) break;
+            let item = advancer(words[j/n_choices>>0], choices[j%n_choices]);
+            if (item !== null) {
+                new_words.push(item);
+                new_index.push(j);
+            }
         }
         
-        if (saturated === null && new_words.length >= effort)
+        let new_weights = [ ];
+        if (end >= 0) {
+            // How many times was each item seen before the end time?
+            // Interval is 1/weight, and total occurrences is ceil((end_time-start_time)/interval)
+            for(let j of new_index)
+                new_weights.push( Math.ceil((end-todo_starts[j])*todo_weights[j]) );
+        } else {
+            // No subsampling occurred, retain original weights.
+            for(let j of new_index)
+                new_weights.push( todo_weights[j] );
+        }
+        
+        if (saturated === null && end >= 0)
             saturated = i;
 
         words = new_words;
