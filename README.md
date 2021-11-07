@@ -26,7 +26,7 @@ Imagine a timeline extending from 0.
 
 For each item `i` place instances of `i` regularly on the timeline at intervals of `1/w[i]`. The first instance is placed randomly at `Math.random()/w[i]`. 
 
-We proceed from time 0 along the timeline, observing items in chronological order. Once we've observed `effort` distinct items we will stop. The new weights are then the number of times each distinct item was observed.
+We proceed from time 0 along the timeline, observing items in chronological order. We will stop just before observing `effort+1` distinct items. The new weights are then the number of times each distinct item was observed.
 
 (The stopping rule potentially creates a small distortion in the distribution. Other than this, selecting a random item from a subsample produced in this way is the same as selecting a random item from the original distribution.)
 
