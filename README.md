@@ -30,7 +30,7 @@ We proceed from time 0 along the timeline, observing items in chronological orde
 
 (The stopping rule potentially creates a small distortion in the distribution. Other than this, selecting a random item from a subsample produced in this way is the same as selecting a random item from the original distribution.)
 
-For example suppose we had three items with weights 1,2 and 5. We might get a timeline like this:
+For example suppose we had three items with weights 10, 5, and 2. We might get a timeline like this:
 
 ```
 Input distribution:
