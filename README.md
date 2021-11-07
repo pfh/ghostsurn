@@ -16,7 +16,7 @@ python3 -m http.server
 
 Layouts are produced in raster scan order. At every step there is a probability distribution of possible layouts. We can then try to extend each layout with each possible color of pixel or shape of tile. Some of these are discarded as invalid (based on allowed pixel patterns or allowed tile adjacency). For the survivors, the specified weights are used to update the probability distribution.
 
-Since this would result in an exponentially increasing set of possible layouts in the probability distribution, this distribution is subsampled at each step to keep its size manageable (controlled by the "effort" parameter).
+Since this would result in an exponentially increasing set of possible layouts in the probability distribution, the distribution is subsampled at each step to keep its size manageable (controlled by the "effort" parameter).
 
 ## Probability distribution subsampling
 
@@ -39,10 +39,10 @@ Input distribution:
     2 has weight 2
 
 --timeline->
- 0  0  0  0  0  0  0  0  0  0  0  0  0
-     1     1     1     1     1     1
-         2              2           2
-         
+ 0  0  0  0  0  0  0  0  0  0  0  0  0  0
+     1     1     1     1     1     1     1
+         2              2              2
+          
          ^ If we subsample down to two distinct items, sampling must stop here.
          
 Output distribution:
