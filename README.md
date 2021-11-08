@@ -1,8 +1,6 @@
 # Ghostsurn
 
-Ghostsurn is a Javascript app that performs tile layout. Simple rules for which tiles or pixels can be next to each other give rise to endless complex patterns. Ghostsurn is similar to my previous [Ghost Diagrams](http://logarithmic.net/pfh/ghost-diagrams) and [Maxim Gumin](https://twitter.com/ExUtumno)'s [WaveFunctionCollapse](https://github.com/mxgmn/WaveFunctionCollapse)). 
-
-The novel feature of Ghostsurn is that it aims to find a uniformly random sample from the set of valid tile layouts rather than only finding an example. The uniformity of the randomness of is not 100% perfect, but perfection can be approached by increasing the "effort" parameter.
+Ghostsurn is a Javascript app that performs tile layout. Simple rules for which tiles or pixels can be next to each other give rise to endless complex patterns. Ghostsurn is similar to my previous [Ghost Diagrams](http://logarithmic.net/pfh/ghost-diagrams) and [Maxim Gumin](https://twitter.com/ExUtumno)'s [WaveFunctionCollapse](https://github.com/mxgmn/WaveFunctionCollapse). The novel feature of Ghostsurn is that it aims to find a uniformly random sample from the set of valid tile layouts rather than only finding an example. The uniformity of the randomness of is not 100% perfect, but perfection can be approached by increasing the "effort" parameter.
 
 * [Take me to the app!](https://logarithmic.net/ghostsurn)
 
