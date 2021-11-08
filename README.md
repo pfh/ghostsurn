@@ -1,6 +1,8 @@
-# ghostsurn
+# Ghostsurn
 
-Ghostsurn is a Javascript app. It is a tile layout method, similar to my previous [Ghost Diagrams](http://logarithmic.net/pfh/ghost-diagrams) and [Maxim Gumin](https://twitter.com/ExUtumno)'s [WaveFunctionCollapse](https://github.com/mxgmn/WaveFunctionCollapse)). The novelty here is that this app aims to find a uniformly random sample rather than only find an example. The uniformity of the randomness of is not 100% perfect, but perfection can be approached by increasing the "effort" parameter. I'm not really sure what the significance of this is, but it [tickles](https://twitter.com/paulfharrison/status/1438466031488421888) at some broad ideas.
+Ghostsurn is a Javascript app that performs tile layout. Simple rules for which tiles or pixels can be next to each other give rise to endless complex patterns. Ghostsurn is similar to my previous [Ghost Diagrams](http://logarithmic.net/pfh/ghost-diagrams) and [Maxim Gumin](https://twitter.com/ExUtumno)'s [WaveFunctionCollapse](https://github.com/mxgmn/WaveFunctionCollapse)). 
+
+The novel feature of Ghostsurn is that it aims to find a uniformly random sample from the set of valid tile layouts rather than only finding an example. The uniformity of the randomness of is not 100% perfect, but perfection can be approached by increasing the "effort" parameter.
 
 * [Take me to the app!](https://logarithmic.net/ghostsurn)
 
@@ -11,6 +13,28 @@ git clone https://github.com/pfh/ghostsurn.git
 cd ghostsurn
 python3 -m http.server
 ```
+
+# App parameters
+
+**Effort** = Size of sample pool to use. Larger values produce a better random draw, and may also let Ghostsurn lay out harder patterns.
+
+**Expansion** = Expand the mask used to validate the layout at each step until up to this amount of memory (bytes) is used. Larger values may let Ghostsurn lay out harder patterns, may increase quality around the edges, but also may increase the startup time.
+
+**Weights** for each tile cause the sampler to work as though the tile has this many distinct internal states (i.e. regarded as distinct when producing a uniformly random sample). Use this to fine-tune the balance of tiles used in the layout. Does not need to be a whole number.
+
+
+# The importance of effort
+
+This app aims to produce a layout drawn uniformly at random from the set of all possible valid layouts. The randomness of the draw is not 100% perfect, but perfection can be approached by increasing the "effort" parameter. Increasing the "expansion" can also help, as less effort is spent trying dead ends. 
+
+To assess the quality of a resulting layout:
+
+* Click and hold on the layout. If it flickers between many different layouts, especially at the top, it is a decent random sample. 
+
+* With insufficient effort, some sets of tiles that should have rotational symmetry have a noticable directionality to them, such as forming many more vertical than horizontal lines or having features at the top of the layout not seen at the bottom.
+
+If the quality of layouts is poor by these criteria, increase the "effort" and/or "expansion".
+
 
 # Consequences of random sampling
 

@@ -5,12 +5,12 @@
 <link rel="icon" type="image/png" href="favicon.png">
 <link rel="stylesheet" href="style.css">
 
-<title>ghostsurn pixels</title>
+<title>Ghostsurn pixels</title>
 
 
 <div class=grid>
     <div id=controls class=controls>
-        <h1>ghostsurn 0.2.5</h1>
+        <h1>Ghostsurn 0.2.5</h1>
         <div style="font-size: 75%">
             <a href="https://github.com/pfh/ghostsurn">&rarr; GitHub</a>
         </div>
@@ -121,27 +121,9 @@
 </div>
 
 <p style="clear: left;">
-This app aims to produce a layout drawn uniformly at random from the set of all possible valid layouts. The randomness of the draw is not 100% perfect, but perfection can be approached by increasing the "effort" parameter.
+A layout is valid if all the mask-shapes from the layout match at least one location in the pattern. If rotation is enabled, all rotations of the mask-shape in the layout must match something in the pattern or a rotation of the pattern. (Minor detail: layouts that would necessarily be invalid beyond the edge of the visible layout are sometimes excluded as well, as a result of a pruning and expansion preprocessing step for the mask-shapes extracted from the pattern.)
 </p>
 
-<p>
-A layout is valid if all the mask-shapes from the layout match at least one location in the pattern. If rotation is enabled, all rotations of the mask-shape in the layout must match something in the pattern or a rotation of the pattern. <small>(Minor detail: layouts that would necessarily be invalid beyond the edge of the visible layout are sometimes excluded as well, as a result of a pruning and expansion preprocessing step for the mask-shapes extracted from the pattern.)</small>
-</p>
-
-<p>
-To assess the quality of the resulting layout, click and hold on the layout. If it flickers between many different layouts, especially at the top, it is a decent random sample. If it doesn't then the layout might not be a good representative of the set of all valid layouts and "effort" should be increased.
-</p>
-
-<p>
-<b>Weights</b> for each color cause the sampler to work as though pixels of this color have this many distinct internal states (i.e. regarded as distinct when producing a uniformly random sample). Use this to increase or decrease the amount of different colors in the output. Does not need to be a whole number.
-</p>
-
-<p>
-<b>Expansion</b> = Expand the mask used to validate the layout at each step until up to this amount of memory (bytes) is used. Larger values may let ghostsurn lay out harder patterns, may increase quality around the edges, but also may increase the startup time.
-</p>
-<p>
-<b>Effort</b> = Size of sample pool to use. Larger values produce a better random draw, and may also let ghostsurn lay out harder patterns.
-</p>  
 <script src=sampler.js></script>
 <script src=interface.js></script>
 <script src=examples.js></script>
