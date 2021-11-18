@@ -88,3 +88,58 @@ Output distribution:
 ```
 
 
+# Quality of randomness
+
+Producing a tile layout requires making `n` choices amongst `m` tiles or colors. We can think of this as producing a word of length `n` with an alphabet of size `m`. 
+
+We will assume the tile weights are all equal in this section.
+
+Let's consider a series of algorithms that produce pools of valid layouts.
+
+First, an algorithm to output all possible valid layouts:
+
+```
+Algorithm 1:
+
+    Create a pool of words, initially containing only the empty string.
+    For i in 0,1,...,n-1:
+        pool <- the set of words from appending each possible tile to the end of each item in pool.
+        pool <- filter pool, retaining only valid layouts.
+```
+
+This will generate an unreasonably large number of layouts. We only want a sample:
+
+```
+Algorithm 2:
+
+    Create a pool of words, initially containing only the empty string.
+    For i in 0,1,...,n-1:
+        pool <- the set of words from appending each possible tile to the end of each item in pool.
+        pool <- filter pool, retaining only valid layouts.
+        pool <- subsample pool, keeping each item only with specified probability p[i].
+```
+
+This will output each valid layout with probability `p[0]*p[1]*...*p[n-1]`. In this sense it produces a valid random sampling. However there are some caveats:
+
+* The layouts that are output in the pool are not independent of each other. 
+* The algorithm will output different numbers of layouts each time it is run -- possibly very different numbers. 
+* Because of the variability in output, the algorithm may have highly variable running time.
+
+Suppose we then choose a random sample from the resulting pool. The quality of the random sample depends on the variability in the output pool size. Layouts that tend to be output as part of a small pool will be selected unfairly often compared to layouts that tend to be output as part of a large pool. To solve this, `p[i]` can be tuned to try to produce similar numbers of outputs each time the algorithm is run. If the pool size variability is minimized, the unfairness will be minimized. (This might require outputting very large pools.)
+
+It would be far more practical if the algorithm could run in a fixed time. To achieve this, we can automatically tune the probability of retaining each item in the pool as the algorithm runs:
+
+```
+Algorithm 3:
+
+    Create a pool of words, initially containing only the empty string.
+    For i in 0,1,...,n-1:
+        pool <- the set of words from appending each possible tile to the end of each item in pool.
+        pool <- filter pool, retaining only valid layouts.
+        pool <- subsample pool, keeping only some fixed number e of items.
+```
+
+This is what Ghostsurn uses. This hides the variability in output size from Algorithm 2, but doesn't eliminate the problem. Increasing the effort `e` *should* produce better random samples, but it is harder to assess the quality of samples than in Algorithm 2.
+
+If high quality random samples are an absolute requirement, a reasonable approach might be to choose `p[i]` based and Algorithm 3, and then run Algorithm 2 many times to check the variability of the size of the output pool.
+
