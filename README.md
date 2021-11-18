@@ -119,7 +119,7 @@ Algorithm 2:
         pool <- subsample pool, keeping each item only with specified probability p[i].
 ```
 
-This will output each valid layout with probability `p[0]*p[1]*...*p[n-1]`. In this sense it produces a valid random sampling. However there are some caveats:
+This will output each valid layout with equal probability. In this sense it produces a valid random sampling. However there are some caveats:
 
 * The layouts that are output in the pool are not independent of each other. 
 * The algorithm will output different numbers of layouts each time it is run -- possibly very different numbers. 
