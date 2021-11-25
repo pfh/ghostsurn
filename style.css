@@ -32,7 +32,8 @@ body {
 }
 
 .status {
-    width: 17em; 
+    font-size: 75%;
+    width: 25em; 
     border: 1px solid #ddd; 
     background: #f8f8f8; 
     padding: 0.5em; 
@@ -49,10 +50,23 @@ body {
     display: grid; 
     width: 100%; 
     grid-template-columns: max-content max-content;
+    column-gap: 1em;
+    row-gap: 0.25em;
 }
  
 .item { 
-    padding: 0em 1em 1em 0em; 
+}
+
+.buttonbox {
+    padding: 1em 0em 1em 0em;
+}
+
+.big {
+    font-size: 200%;
+}
+
+.preview_canvas {
+    vertical-align: middle;
 }
 
 p { margin-left: 1em; margin-right: 1em; }
@@ -69,9 +83,11 @@ td {
 }
 
 input[type=text] {
-    width: 8em;
+    width: 5em;
     font-family: monospace;
     vertical-align: middle;
+    border: 1px solid #aaaaaa;
+    margin: 0px 0px 1px 0px;
 }
 
 input[type=radio] {
@@ -80,14 +96,17 @@ input[type=radio] {
 }
 
 input[type=color] {
-    width: 3em;
+    width: 2em;
     height: 2em;
     background: none;
     border: none;
     vertical-align: middle;
+    margin: 0;
+    padding: 0;
 }
 
 button {
     min-width: 1.5em;
     text-align: center;
+    font-size: 100%;
 }

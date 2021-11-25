@@ -10,7 +10,7 @@
 
 <div class=grid>
     <div id=controls class=controls>
-        <h1>Ghostsurn 0.2.5</h1>
+        <h1>Ghostsurn 0.2.6</h1>
         <div style="font-size: 75%">
             <a href="https://github.com/pfh/ghostsurn">&rarr; GitHub</a>
         </div>
@@ -98,11 +98,11 @@
             <button onclick="dec_small('scale'); redraw();">-</button>
             <input type="text" id=scale oninput="redraw()">
         </div>
-        <div class=item></div>
-        <div class=item>
+        </div>
+
+        <div class=buttonbox>
             <button id=again onclick="recompute()" title="draw a new sample">Again</button>
             <button id=randomize onclick="randomize()" title="apply variable reinforcement to the user">Randomize pattern</button>
-        </div>
         </div>
         
         <div id=status class=status></div>

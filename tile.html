@@ -10,7 +10,7 @@
 <div class=grid>
     <div id=controls class=controls>
 
-        <h1>Ghostsurn 0.2.5</h1>
+        <h1>Ghostsurn 0.2.6</h1>
         <div style="font-size: 75%">
             <a href="https://github.com/pfh/ghostsurn">&rarr; GitHub</a>
         </div>
@@ -18,12 +18,14 @@
             <a class="switch" href="pixel.html">Pixels</a>
             <a class="switch switch_active" href="tile.html">Tiles</a>
         </div>
+        <div style="text-align: right; font-size: 75%;">Weight</div>
         <div class=grid>
             <div class=item>
-                Tiles <button onclick="more_tile_inputs()" title="add a tile">+</button>
+                Tiles
             </div>
-            <div class=item id=tile_area>
-                <div style="text-align: right; font-size: 75%;">Weight</div>
+            <div class=item style="padding-bottom: 2em">
+                <div id=tile_area></div>
+                <div><button onclick="more_tile_inputs()" title="add a tile">+</button></div>
             </div>
             <div class=item>Background</div>
             <div class=item><input type=color id=bg onchange="redraw()"></div>
@@ -68,11 +70,11 @@
               <button onclick="dec_small('scale'); redraw();">-</button>
               <input type="text" id=scale oninput="redraw()">
             </div>
-            <div class=item></div>
-            <div class=item>
-              <button id=again onclick="recompute()" title="draw a new sample">Again</button>
-              <button id=randomize onclick="randomize()" title="apply variable reinforcement to the user">Randomize tiles</button>
-            </div>
+        </div>
+        
+        <div class=buttonbox>
+          <button id=again onclick="recompute()" title="draw a new sample">Again</button>
+          <button id=randomize onclick="randomize()" title="apply variable reinforcement to the user">Randomize tiles</button>
         </div>
         
         <div id=status class=status></div>
@@ -121,7 +123,7 @@ let n_tile_inputs = 0;
 
 function require_tile_inputs(n) {
     while(n_tile_inputs < n) {
-        get("tile_area").innerHTML += `<input type=text id=tile${n_tile_inputs} oninput="recompute()"> <input type=color id=pal${n_tile_inputs} onchange="redraw()"> <input type=text id=weight${n_tile_inputs} oninput="recompute()" style="width: 2em"><br>`;
+        get("tile_area").innerHTML += `<input type=text id=tile${n_tile_inputs} class=big oninput="recompute()"><canvas id=tile_canvas${n_tile_inputs} width=0 height=0 class=preview_canvas></canvas><input type=color id=pal${n_tile_inputs} onchange="redraw()"> <input type=text id=weight${n_tile_inputs} oninput="recompute()" style="width: 2em"><br>`;
         n_tile_inputs++;
     }
 }
@@ -238,7 +240,7 @@ function more_tile_inputs() {
 function redraw() {
     load_param();
     update_url();
-    
+        
     let status = compute_comment;
     
     if (result !== null && result.finished && result.words.length == 0)
@@ -254,6 +256,43 @@ function redraw() {
         status += "<br><br>"+result.comment;
     
     get("status").innerHTML = status;
+    
+    // Show previews of each tile. Very much a hack.
+    for(let i of range(n_tile_inputs)) {
+        let canvas = get("tile_canvas"+i);
+        canvas.width = 40;
+        canvas.height = 0;
+        canvas.marginTop = 0;
+        canvas.marginBottom = 0;
+        
+        if (i >= param.tiles.length) continue;
+        let tile = param.tiles_spun.find(item => item.tile == param.tiles[i].tile);
+        if (!tile) continue;
+        if (tile.tile.length != 4 && tile.tile.length != 6) continue;
+        if (Array.from(tile.tile).findIndex(c => !edge_partners.hasOwnProperty(c)) >= 0) continue;
+        
+        let tiles = [ {...tile, knotstack:[]}, tile ];
+        let c0 = String.fromCodePoint(0);
+        let c1 = String.fromCodePoint(1);
+        let word;
+        if (tile.tile.length == 4)
+            word = c0+c0+c0+c0+c1+c0+c0+c0+c0;
+        else
+            word = c0+c0+c0+c0+c0+c0+c0+c1+c0+c0+c0+c0+c0+c0+c0;
+        
+        draw_tile_layout( 
+            get("tile_canvas"+i),
+            3, word.length/3, 10,
+            word,
+            tiles,
+            1,
+            false,
+            "#ffffff00");
+        
+        // Overflow vertical space
+        canvas.style.marginTop = -canvas.height/2+"px";
+        canvas.style.marginBottom = -canvas.height/2+"px";
+    }
     
     if (result === null || result.words.length == 0) {
         let ctx = canvas.getContext("2d");
