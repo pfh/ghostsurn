@@ -18,15 +18,17 @@
             <a class="switch" href="pixel.html">Pixels</a>
             <a class="switch switch_active" href="tile.html">Tiles</a>
         </div>
-        <div style="text-align: right; font-size: 75%;">Weight</div>
-        <div class=grid>
-            <div class=item>
-                Tiles
-            </div>
-            <div class=item style="padding-bottom: 2em">
+
+        <div style="display: inline-block">
+            Tiles</br>
+            <div style="text-align: right; font-size: 75%;">Weight</div>
+            <div style="padding-bottom: 2em">
                 <div id=tile_area></div>
                 <div><button onclick="more_tile_inputs()" title="add a tile">+</button></div>
             </div>
+            </div></br>
+
+        <div class=grid>
             <div class=item>Background</div>
             <div class=item><input type=color id=bg onchange="redraw()"></div>
             <div class=item>Grid</div>
@@ -282,7 +284,7 @@ function redraw() {
         
         draw_tile_layout( 
             get("tile_canvas"+i),
-            3, word.length/3, 10,
+            3, word.length/3, 12,
             word,
             tiles,
             1,
