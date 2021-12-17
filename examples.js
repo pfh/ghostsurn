@@ -191,6 +191,8 @@ let tile_examples = [
     ["Branching paths", "bg=%233465a4&outlines=3&tile0=--b-&pal0=%23ffffff&weight0=1&tile1=--Bb&pal1=%23ffffff&weight1=1&tile2=BBb-&pal2=%23ffffff&weight2=1&tile3=bBbB&pal3=%23ffffff&weight3=1&tile4=----&pal4=%23ffffff&weight4=1"],
 
     ["Script", "bg=%23396875&outlines=3&tile0=BdBd&pal0=%23ffffff&weight0=2&tile1=B-b-&pal1=%23ffffff&weight1=1&tile2=Bd--&pal2=%23ffffff&weight2=1&tile3=----&pal3=%238e8e8e&weight3=1&tile4=D-d-&pal4=%23ffffff&weight4=1&tile5=Db--&pal5=%23ffffff&weight5=1&tile6=d---&pal6=%23d9138a&weight6=1&tile7=DbDb&pal7=%23ffffff&weight7=2"],
+    
+    ["Hitomezashi", "bg=%23ffffff&outlines=1&grid=1&tile0=--22&pal0=%23729fcf&weight0=1"],
 ];
 
 

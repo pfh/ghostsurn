@@ -17,6 +17,10 @@ class XY {
         return xy(this.x*scale,this.y*scale);
     }
     
+    dot(other) {
+        return this.x*other.x+this.y*other.y;
+    }
+    
     // anticlockwise
     rot(angle) {
         angle = angle * (Math.PI/180);
@@ -31,6 +35,38 @@ class XY {
 }
 
 function xy(x,y) { return new XY(x,y); }
+
+function good_bezier(a,b,c,d) {
+    let p0 = a;
+    let v0 = b.sub(a);
+    let v1 = d.sub(c);
+    let p1 = d;
+    
+    v0 = v0.scale(1/v0.length());
+    v1 = v1.scale(1/v1.length());
+    let dot = v0.dot(v1);
+    
+    // Clip floating point errors
+    dot = Math.max(-1,Math.min(dot,1));
+    
+    //For arc
+    //https://stackoverflow.com/questions/1734745/how-to-create-circle-with-b%C3%A9zier-curves
+    //let angle = Math.acos(Math.min(dot,1));
+    //let n = 2*Math.PI / angle;
+    //let straight_line_length = Math.sqrt( (1-Math.cos(2*Math.PI/n))**2+Math.sin(2*Math.PI/n)**2 );
+    //a0 = 4*Math.tan(Math.PI/(2*n)) / straight_line_length;
+    
+    //let straight_line_length = Math.sin(angle/2)*2;
+    //a0 = 4*Math.tan(angle/4) / straight_line_length;
+    
+    // Wolfram Alpha says
+    let s = 2/(Math.cos(Math.acos(dot)*0.5)+1);
+
+    s *= p1.sub(p0).length();
+
+    // Hermite to Bezier conversion    
+    return [ v0.scale(1/3 * s).add(p0), v1.scale(-1/3 * s).add(p1) ];
+}
 
 
 const edge_specs = {
@@ -202,11 +238,12 @@ function draw_tile(ctx, tile, x, y, scale, all_offset, what) {
             ctx.lineTo(p[i][3].x,p[i][3].y);
             
             let a=p[i][3], b=p[i][4], c=p[j][0], d=p[j][1];
-            let l = d.sub(a).length() * 0.4;
-            b = b.sub(a);
-            b = b.scale(l/b.length()).add(a);
-            c = c.sub(d);
-            c = c.scale(l/c.length()).add(d);
+            //let l = d.sub(a).length() * 0.4;
+            //b = b.sub(a);
+            //b = b.scale(l/b.length()).add(a);
+            //c = c.sub(d);
+            //c = c.scale(l/c.length()).add(d);
+            [b,c] = good_bezier(a,b,c,d);
             ctx.bezierCurveTo(b.x,b.y,c.x,c.y,d.x,d.y);
         }
         ctx.closePath();
@@ -234,11 +271,12 @@ function draw_tile(ctx, tile, x, y, scale, all_offset, what) {
             let j=(i+1)%p.length;
             
             let a=p[i][3], b=p[i][4], c=p[j][0], d=p[j][1];
-            let l = d.sub(a).length() * 0.4;
-            b = b.sub(a);
-            b = b.scale(l/b.length()).add(a);
-            c = c.sub(d);
-            c = c.scale(l/c.length()).add(d);
+            //let l = d.sub(a).length() * 0.4;
+            //b = b.sub(a);
+            //b = b.scale(l/b.length()).add(a);
+            //c = c.sub(d);
+            //c = c.scale(l/c.length()).add(d);
+            [b,c] = good_bezier(a,b,c,d);
             ctx.beginPath();
             ctx.moveTo(a.x,a.y);
             ctx.bezierCurveTo(b.x,b.y,c.x,c.y,d.x,d.y);
