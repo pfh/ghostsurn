@@ -125,7 +125,8 @@ const step_6 = { x:xy(2,0).rot(-30), y:xy(0,2) };
 
 function spin_tiles(input, knotwork) {
     let tiles = [ ];
-    for(let tile of input) {
+    for(let j of range(input.length)) {
+        let tile = input[j];
         let seen = new Set();
         
         let ind = Array.from(range(tile.tile.length)).filter(i => tile.tile[i] != "-");
@@ -145,6 +146,7 @@ function spin_tiles(input, knotwork) {
         for(let i of range(tile.tile.length)) {
             let spun = {
                 ...tile, 
+                origin:j,
                 spin:i,
                 tile:tile.tile.slice(i)+tile.tile.slice(0,i),
                 knotstack:knotstack.map(item => item.slice(i)+item.slice(0,i)),
@@ -222,8 +224,13 @@ function draw_tile(ctx, tile, x, y, scale, all_offset, what) {
     if (p.length == 1) {
         let a = p[0][2];
         a = a.scale(-0.5/a.length());
-        let b = a.scale(1.5);
-        p.push([ a.add(b.rot(-90)), a,a,a, a.add(b.rot(90)) ])
+        //let b = a.scale(1.5);
+        //p.push([ a.add(b.rot(-90)), a,a,a, a.add(b.rot(90)) ])
+        
+        let b = p[0][3].add(a);
+        p.push([p[0][3],b,b,b,b.add(a)]);
+        b = p[0][1].add(a);
+        p.push([b.add(a),b,b,b,p[0][1]]);
     }
     
     p = p.map(points => points.map(point => point.add(offset).scale(scale).add(all_offset)));

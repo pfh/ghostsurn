@@ -268,7 +268,7 @@ function redraw() {
         canvas.marginBottom = 0;
         
         if (i >= param.tiles.length) continue;
-        let tile = param.tiles_spun.find(item => item.tile == param.tiles[i].tile);
+        let tile = param.tiles_spun.find(item => item.origin == i);
         if (!tile) continue;
         if (tile.tile.length != 4 && tile.tile.length != 6) continue;
         if (Array.from(tile.tile).findIndex(c => !edge_partners.hasOwnProperty(c)) >= 0) continue;
@@ -367,6 +367,8 @@ function recompute() {
 
 
 function randomize() {
+    let want_blank = Math.random() < 0.5;
+    
     for(let tries of range(100)) {
         let ind = [ ];
         for(let i of range(param.tiles.length))
@@ -384,6 +386,11 @@ function randomize() {
                 newtile += pool.pop();
             param.tiles[i].tile = newtile;
         }
+        
+        // Bias towards producing a blank tile.
+        if (want_blank && tries < 50 &&
+            param.tiles.filter(tile => tile.tile=="----" || tile.tile=="------").length == 0)
+            continue;
         
         if (param.outlines != 3) break;
         

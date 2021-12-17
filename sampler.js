@@ -475,6 +475,21 @@ function make_validity(width, height, specs, weights, max_memory) {
 // This is called in the worker.
 function run_job(width, height, specs, weights, effort, max_memory) {
     let validity = make_validity(width, height, specs, weights, max_memory);
-    let result = validity.sample(effort, result => self.postMessage({...result, comment:validity.comment}));        
-    self.postMessage({...result, comment:validity.comment});
+
+    // Increase effort on failure    
+    let result;
+    let comment = '';
+    let this_effort = effort;
+    while(true) {
+        result = validity.sample(this_effort, result => self.postMessage({...result, comment:comment + validity.comment}));
+        
+        if (result.words.length > 0) break;
+
+        this_effort *= 2;
+        if (this_effort > effort*128) break;
+
+        comment = `Effort increased to ${this_effort}. `;
+    }
+    
+    self.postMessage({...result, comment:comment + validity.comment});
 }
