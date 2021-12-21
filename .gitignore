@@ -1,3 +1,5 @@
+*.svg
+
 # Logs
 logs
 *.log

@@ -135,7 +135,7 @@ function render_to_path(items) {
         result += `C ${b.x} ${b.y}, ${c.x} ${c.y}, ${items[j].p.x} ${items[j].p.y} `;
     }
 
-    result += "Z";
+    result += "Z ";
 
     return result;
 }
@@ -154,6 +154,8 @@ function render_to_svg(paths, padding, scale, color) {
     let width = max_x-min_x+padding*2;
     let height = max_y-min_y+padding*2;
     let offset = xy(padding-min_x, padding-min_y);
+    
+    console.log(`${width/72*2.54}cm x ${height/72*2.54}cm`);
 
     let result = `<svg version="1.1" width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">`;
     result += `<path d="`;
@@ -198,6 +200,28 @@ let inout = rounded_polyline(3/4, [
 
 let corner = [ new Node(xy(0,0), xy(0,-1), xy(1,0)) ];
 
+//let corner = rounded_polyline(1, [
+//    xy(0,0),
+//    xy(0,2),
+//    xy(-2,2),
+//    xy(-2,0),
+//    xy(0,0),
+//]);
+
+let big_bang = [
+//        ...put(-1,1, 0, s, corner),
+    
+//        ...put(1,1,  90, s, corner),
+        flat(-1,0, 0,1),
+        flat(1,0, 0,-1),
+
+        ...put(1,-1,  180, 1/5, corner),
+        ...put(0,-1, 180,  1/5, outie),
+
+        ...put(-1,-1, 270, 1/5, corner),
+    
+];
+
 function put(x,y,rot,scale,path) {
     let p=xy(x,y);
     return path.map(node => node.rot(rot).scale(scale).add(p));
@@ -225,8 +249,15 @@ function cell(in0,in1,in2,out) {
 function layout(paths) {
     let result = [ ];
     for(let i of range(paths.length)) {
-        result.push(put( (i%6)*4, ((i/6)>>0)*4, 0,1, paths[i]));
+        result.push(put( (i%4)*3.7, ((i/4)>>0)*3.25, 0,1, paths[i]));
     }
+    return result;
+}
+
+function rep(items,n) {
+    let result = [ ];
+    for(let i of range(n))
+        result.push(...items);
     return result;
 }
 
@@ -252,5 +283,9 @@ for(let i of range(8)) {
     (out?black_tiles:white_tiles).push( cell(in0,in1,in2,out) );
 }
 
-fs.writeFileSync("black.svg", render_to_svg(layout(black_tiles), 1, 72/2.54, "#444"))
-fs.writeFileSync("white.svg", render_to_svg(layout(white_tiles), 1, 72/2.54, "#ddd"))
+fs.writeFileSync("black.svg", render_to_svg(layout(rep(black_tiles,6)), 0.5, 1.5* 72/2.54, "#444"));
+fs.writeFileSync("white.svg", render_to_svg(layout(rep(white_tiles,6)), 0.5, 1.5* 72/2.54, "#ddd"));
+fs.writeFileSync("big_bang.svg", render_to_svg([big_bang],              2  , 1.5* 72/2.54, "#444"));
+
+global.x = 42;
+require("repl").start({useGlobal:true});
