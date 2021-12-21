@@ -287,5 +287,5 @@ fs.writeFileSync("black.svg", render_to_svg(layout(rep(black_tiles,6)), 0.5, 1.5
 fs.writeFileSync("white.svg", render_to_svg(layout(rep(white_tiles,6)), 0.5, 1.5* 72/2.54, "#ddd"));
 fs.writeFileSync("big_bang.svg", render_to_svg([big_bang],              2  , 1.5* 72/2.54, "#444"));
 
-global.x = 42;
-require("repl").start({useGlobal:true});
+//global.x = 42;
+//require("repl").start({useGlobal:true});
