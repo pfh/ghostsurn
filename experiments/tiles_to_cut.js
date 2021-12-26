@@ -382,14 +382,53 @@ function make_penrose(opts) {
     let thick = rhomb(36, flip(sideA),flip(sideB),sideB,sideA);
 
     thin = put(xy(0,0), -18,1, thin);
-    thick = put(xy(0,0), -36*3,1, thick);
+    //thick = put(xy(0,0), -36*3,1, thick);
+    thick = put(xy(0,0), 36*4,1, thick);
 
-    render_to_svg("penrose-thin.svg", layout(rep([thin],24),3,3.4,1.75), 0.25, 2* 72/2.54, opts);
-    render_to_svg("penrose-thick.svg", layout(rep([thick],16),4,2.6,3.25), 0.25, 2* 72/2.54, opts);
+    render_to_svg("penrose-thin.svg", layout(rep([thin],18),3,3.4,2.5), 0.25, 2* 72/2.54, opts);
+    render_to_svg("penrose-thick.svg", layout(rep([thick],16),4,2.6,3.5), 0.25, 2* 72/2.54, opts);
 }
 
+
+function make_sierpinski(opts) {
+    let v0 = xy(1,0);
+    let v1 = v0.rot(-60);
+    let at = (x,y) => v0.scale(x).add(v1.scale(y));
+    let s = 1/3;
+    let tile = [
+        node(at(-2,0),at(2,-1),at(0,1)),
+        ...put(at(-2,1), -60, s, outie),
+        node(at(-2,2),at(0,-1),at(1,0)),
+        ...put(at(-1,2), 0, s, inie),
+        node(at(0,2),at(-1,0),at(1,-1)),
+        ...put(at(1,1), 60, s, outie),
+        node(at(2,0),at(-1,1),at(0,-1)),
+        ...put(at(2,-1), 120, s, inie),
+        node(at(2,-2),at(0,1),at(-2,1)),
+    ];
+
+    let corner = [
+        node(at(-2,0),at(2,-1),at(0,1)),
+        ...put(at(-2,1), -60, s, outie),
+        node(at(-2,2),at(0,-1),at(1,0)),
+        ...put(at(-1,2), 0, s, inie),
+        node(at(0,2),at(-1,0),at(1,-2)),
+        node(at(2,-2),at(-1,2),at(-2,1)),
+    ];
+
+    tile = put(xy(0,0), -30, 1, tile)
+
+    //render_to_svg("sierpinski.svg", layout([...rep([corner],3), ...rep([tile], 21)], 4,5,4.5), 1, 1* 72/2.54, opts)
+    //render_to_svg("sierpinski-2.svg", layout(rep([tile], 24), 4,5,4.5), 1, 1* 72/2.54, opts)
+
+    tile = put(xy(0,0), 90, 1, tile)
+    render_to_svg("sierpinski.svg", layout([...rep([corner],3), ...rep([tile], 21)], 4,5,4.5), 1, 1* 72/2.54, opts)
+    render_to_svg("sierpinski-2.svg", layout(rep([tile], 20), 4,4.5,5.5), 1, 1* 72/2.54, opts)
+}
+
+
 let opts = commander.program
-    .option("--maxturn <number>", "Fishtail turns more acute than this. Zero to disable.", parseFloat, 80)
+    .option("--maxturn <number>", "Fishtail turns more acute than this. Zero to disable.", parseFloat, 100)
     .option("--runin <cm>", "Length of fishtail in cm.", parseFloat, 0.5)
     .option("--reps <n>", "Number of copies of each tile to output.", parseInt, 6)
     .option("--rule <number>", "Cellular automaton rule number.", parseInt, 30)
@@ -399,6 +438,7 @@ console.log(opts);
 
 make_penrose(opts);
 make_automaton(opts);
+make_sierpinski(opts);
 
 //make_automaton(30);
 
