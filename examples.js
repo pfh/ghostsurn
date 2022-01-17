@@ -140,13 +140,21 @@ let ghost_diagrams_raw = [
 ];
 
 let tile_examples = [    
-    ["Helix", "bg=%23fce94f&outlines=3&tile0=Bb-Bb-&pal0=%23ffffff&weight0=2&tile1=B--b--&pal1=%23d9138a&weight1=1&tile2=bB----&pal2=%2312a4d9&weight2=1"],
+    ["Helix", 
+      "bg=%23fce94f&outlines=3&tile0=Bb-Bb-&pal0=%23ffffff&weight0=1&tile1=B--b--&pal1=%23d9138a&weight1=1&tile2=bB----&pal2=%2312a4d9&weight2=1",
+      "The tiles force the paths to alternate under and over, forming a knotwork."],
     
-    ["Thesis", "bg=%23204a87&outlines=3&grid=1&tile0=---aA-&pal0=%238ae234&weight0=1&tile1=abBA--&pal1=%238ae234&weight1=3&tile2=BbBb--&pal2=%23fce94f&weight2=2&tile3=------&pal3=%23000000&weight3=1"],
+    ["Thesis", 
+      "bg=%23204a87&outlines=3&grid=1&tile0=---aA-&pal0=%238ae234&weight0=1&tile1=abBA--&pal1=%238ae234&weight1=3&tile2=BbBb--&pal2=%23fce94f&weight2=2&tile3=------&pal3=%23000000&weight3=1",
+      "I used a pattern similar to this on the cover of my PhD thesis."],
 
-    ["Triangles", "bg=%23fce94f&tile0=AaAa--&pal0=%23ffffff&weight0=1&tile1=------&pal1=%23d9138a&weight1=1"],
+    ["Triangles", 
+      "bg=%23fce94f&tile0=AaAa--&pal0=%23ffffff&weight0=1&tile1=------&pal1=%23d9138a&weight1=1",
+      "Can be viewed as an XOR cellular automaton."],
     
-    ["Feynman's van", "outlines=0&tile0=d-D-4-&pal0=%23fce94f&weight0=2&tile1=d--D--&pal1=%23d9138a&weight1=1&tile2=44----&pal2=%2312a4d9&weight2=1"],
+    ["Feynman's van", 
+      "outlines=0&tile0=d-D-4-&pal0=%23fce94f&weight0=2&tile1=d--D--&pal1=%23d9138a&weight1=1&tile2=44----&pal2=%2312a4d9&weight2=1",
+      "Reminds me of Feynman diagrams. Richard Feynman decorated his van with them."],
     
     ["DNA", "max_memory=1000000&effort=250&tile0=ab-A--&pal0=%239af4fa&weight0=1&tile1=B--C--&pal1=%2373d216&weight1=1&tile2=B--c--&pal2=%23cc0000&weight2=1&tile3=B--D--&pal3=%23000000&weight3=1&tile4=B--d--&pal4=%234453ff&weight4=1"],
     
@@ -158,7 +166,9 @@ let tile_examples = [
 
     ["Eastern windows", "tile0=dd22&pal0=%23fce94f&weight0=2&tile1=D-4-&pal1=%23d9138a&weight1=1&tile2=22--&pal2=%2312a4d9&weight2=1"],
     
-    ["Binary counter", "bg=%23d3d7cf&outlines=1&grid=1&tile0=4B4B&pal0=%23888a85&weight0=2&tile1=c-C-&pal1=%23d9138a&weight1=1&tile2=-bC-&pal2=%2312a4d9&weight2=1&tile3=cb-B&pal3=%23fce94f&weight3=1&tile4=----&pal4=%23ffffff&weight4=1"],
+    ["Binary counter", 
+      "bg=%23d3d7cf&outlines=1&grid=1&tile0=4B4B&pal0=%23888a85&weight0=2&tile1=c-C-&pal1=%23d9138a&weight1=1&tile2=-bC-&pal2=%2312a4d9&weight2=1&tile3=cb-B&pal3=%23fce94f&weight3=1&tile4=----&pal4=%23ffffff&weight4=1",
+      "Increment-by-one implemented as tiles."],
     
     ["Society", "tile0=-a--4-&pal0=%23fce94f&weight0=1&tile1=-4-4--&pal1=%23d9138a&weight1=1&tile2=--A441&pal2=%2312a4d9&weight2=2&tile3=------&pal3=%23000000&weight3=1"],
     
@@ -184,7 +194,9 @@ let tile_examples = [
     
     ["Rings", "bg=%23ffffff&outlines=1&grid=1&tile0=-44B4D&pal0=%23fce94f&weight0=10&tile1=-dbB4b&pal1=%23d9138a&weight1=10&tile2=-44D-d&pal2=%2312a4d9&weight2=5&tile3=----44&pal3=%23000000&weight3=1&tile4=------&pal4=%23ffffff&weight4=1"],
     
-    ["One loop", "bg=%2329d68f&tile0=-a-A-a&pal0=%23ee9711&weight0=1&tile1=----A-&pal1=%238f29d6&weight1=1&tile2=------&pal2=%2312a4d9&weight2=3"],
+    ["One loop", 
+      "bg=%2329d68f&tile0=-a-A-a&pal0=%23ee9711&weight0=1&tile1=----A-&pal1=%238f29d6&weight1=1&tile2=------&pal2=%2312a4d9&weight2=3",
+      "Notice how each connected component contains exactly one loop."],
     
     ["Isoforms", "tile0=--33Aa&pal0=%23fce94f&weight0=1&tile1=-33-Aa&pal1=%23d9138a&weight1=1&tile2=------&pal2=%2312a4d9&weight2=1"],
     
@@ -194,7 +206,13 @@ let tile_examples = [
 
     ["Script", "bg=%23396875&outlines=3&tile0=BdBd&pal0=%23ffffff&weight0=2&tile1=B-b-&pal1=%23ffffff&weight1=1&tile2=Bd--&pal2=%23ffffff&weight2=1&tile3=----&pal3=%238e8e8e&weight3=1&tile4=D-d-&pal4=%23ffffff&weight4=1&tile5=Db--&pal5=%23ffffff&weight5=1&tile6=d---&pal6=%23d9138a&weight6=1&tile7=DbDb&pal7=%23ffffff&weight7=2"],
     
-    ["Hitomezashi", "bg=%23ffffff&outlines=1&grid=1&tile0=--22&pal0=%23729fcf&weight0=1"],
+    ["Hitomezashi", 
+      "bg=%23ffffff&outlines=1&grid=1&tile0=--22&pal0=%23729fcf&weight0=1",
+      "Traditional Japanese embroidery as featured on Numberphile."],
+    
+    ["Dense triangles", 
+      "tile0=CcCcbB&pal0=%23cfe81a&weight0=1&tile1=BbBbcC&pal1=%23113990&weight1=1", 
+      "Similar to the Taylor Tile (Socolar and Taylor, 2011), however less constrained."],
 ];
 
 

@@ -406,8 +406,10 @@ function randomize() {
 
 
 
-for(let [name,url] of tile_examples) {
-    get("examples").innerHTML += `<a href="#${url}">${name}</a><br/>`;
+for(let [name,url,title] of tile_examples) {
+    if (typeof title == "undefined")
+        title = "";
+    get("examples").innerHTML += `<a href="#${url}" title="${title}">${name}</a><br/>`;
 }
 get("examples").innerHTML += "<h4><a href=\"https://logarithmic.net/ghost.xhtml\">Ghost Diagrams</a> examples</h4>These won't all necessarily work well with ghostsurn.<br/><br/>";
 for(let [name,url] of ghost_diagrams_examples()) {
