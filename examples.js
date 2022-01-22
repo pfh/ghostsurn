@@ -210,9 +210,13 @@ let tile_examples = [
       "bg=%23ffffff&outlines=1&grid=1&tile0=--22&pal0=%23729fcf&weight0=1",
       "Traditional Japanese embroidery as featured on Numberphile."],
     
-    ["Dense triangles", 
-      "tile0=CcCcbB&pal0=%23cfe81a&weight0=1&tile1=BbBbcC&pal1=%23113990&weight1=1", 
-      "Similar to the Taylor Tile (Socolar and Taylor, 2011), however less constrained."],
+    ["Dense triangles",
+     "tile0=EEeeEe&pal0=%234e9a06",
+     "Similar to the Taylor Tile (Socolar and Taylor, 2011), but without the flag constraints."],
+    
+    ["Dense triangles, two color", 
+      "tile0=EFfeEe&pal0=%23cfe81a&weight0=1&tile1=FEefFf&pal1=%23113990&weight1=1",
+      "Similar to the Taylor Tile (Socolar and Taylor, 2011), but without the flag constraints."],
 ];
 
 
