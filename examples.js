@@ -217,6 +217,8 @@ let tile_examples = [
     ["Dense triangles, two color", 
       "tile0=EFfeEe&pal0=%23cfe81a&weight0=1&tile1=FEefFf&pal1=%23113990&weight1=1",
       "Similar to the Taylor Tile (Socolar and Taylor, 2011), but without the flag constraints."],
+
+    ["Coils", "outlines=3&tile0=bbB-B-&pal0=%23faed00&tile1=B---b-&pal1=%2300dfe1&tile2=--B--b&pal2=%235cd86b"],
 ];
 
 
